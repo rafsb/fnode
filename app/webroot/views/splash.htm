@@ -1,0 +1,15 @@
+<template>
+    <section id='screen-splash' class='-fixed -wrapper -inverted' style='background:@BACKGROUND; z-index:10000'>
+        <div class='-centered -content-center'>
+            <i style="padding:.25em 3em">Loading</i>
+            <div class='-row'>
+                <div class='--progress' style="background:@FONT;height:.25em;border-radius:.25em"></div>
+            </div>
+        </div>
+    </section>
+    <script>
+        bootloader.onReadyStateChange.add(p => $('#screen-splash .--progress')[0].anime({ width: (100 * p) + '%'}));
+        bootloader.onFinishLoading.add(NULL => $('#screen-splash')[0].desappear(AL, true))
+        setTimeout(NULL => bootloader.ready("splash"), AL*2)
+    </script>
+</template>

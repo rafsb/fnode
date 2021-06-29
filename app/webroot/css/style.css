@@ -1,0 +1,4 @@
+/* Custom Scrollbar */
+::-webkit-scrollbar { width: .5rem; }
+::-webkit-scrollbar-track { background: rgba(255,255,255,.16); }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,.64); border-radius: .5rem; border:none;height:1em; width:1em;}
