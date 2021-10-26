@@ -1,12 +1,13 @@
 <template>
+
     <!-- HOME WRAPPER-->
-    <div id="home" class="-fixed -wrapper -no-scrolls"></div>
-
-    <!-- STYLESHEET -->
-    <style></style>
-
+    <div id="home" class="-fixed -wrapper -scrolls">
+        <!-- content -->
+    </div>
+        
     <!-- SCRIPS -->
     <script>
-        setTimeout(NULL => bootloader.ready("home"), AL*2)
+        app.load("components/header.htm", null, $('#home')[0])
+        bootloader.ready("home")
     </script>
 </template>

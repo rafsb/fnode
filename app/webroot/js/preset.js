@@ -1,19 +1,19 @@
 binds(app, {
-    components: {}
-    , theme_name: app.storage("theme_name", app.storage("theme_name") || APP_DEFAULT_THEME)
-    , initial_pragma: EPragmas.START
-    , clear_cache: NULL => {
+    components: {},
+    theme_name: app.storage("theme_name", app.storage("theme_name") || APP_DEFAULT_THEME),
+    initial_pragma: EPragmas.START,
+    clear_cache: NULL => {
         [
             /*
-            * Clear Storage variables
-            */
+             * Clear Storage variables
+             */
             "hash", "theme_name", "custom_theme", "v"
 
         ].each(item => app.storage(item, ""))
-    }
-    , on_login: response => {
-        const hash = response.data.replace(/\s+/g,'').slice(0,128);
-        if(hash.length > 32 && app.storage("hash", hash)) return app.sleep(200).then(NULL => location.reload());
+    },
+    on_login: response => {
+        const hash = response.data.replace(/\s+/g, '');
+        if (hash.length > 32 && app.storage("hash", hash)) return app.sleep(200).then(NULL => location.reload());
         app.error("Ops! Algo deu errado, tente novamente...");
     }
 });;
@@ -35,28 +35,28 @@ bootloader.dependencies = [
 bootloader.loadComponents.add(NULL => {
 
     app.post("themes", { theme: app.theme_name }).then(theme => {
-        
+
         /*
          * Load App theme and assign
          */
         if (theme.data) {
             theme = theme.data.json();
             let custom_theme = app.storage("custom_theme");
-            if(custom_theme) binds(theme, custom_theme.json());
+            if (custom_theme) binds(theme, custom_theme.json());
             binds(app.color_pallete, theme);
         }
-        [ "background", "foreground" ].each(x => $(".--"+x).css({ background: theme[x.toUpperCase()] }));
+        ["background", "foreground"].each(x => app.get(".--" + x).css({ background: theme[x.toUpperCase()] }));
 
         /*
          * Splash/Login boot depends on config
          */
-        if(!APP_NEEDS_LOGIN||app.hash) app.load("splash.htm").then(NULL => {
+        if (!APP_NEEDS_LOGIN || app.hash) app.load("splash.htm").then(NULL => {
 
-            app.load("home.htm");
-            app.post("enumerators/estatus").then(res => window.EStatus = res.data.json())
+            app.load("home.htm")
 
-        }); else app.load("webroot/views/login.htm");
-        
+        });
+        else app.load("webroot/views/login.htm");
+
         // assign true to loader.theme
         bootloader.ready("theme")
 
@@ -73,7 +73,7 @@ bootloader.onFinishLoading.add(function() {
 
     // tileClickEffectSelector(".--tile");
     // tooltips();
-    
+
 })
 
 /*
@@ -90,7 +90,8 @@ app.hints = {
  * comment to normal initialization without
  * possible system dependencies
  */
-app.initPool.add(NULL => bootloader.loadComponents.fire())
+
+initPool.add(NULL => bootloader.loadComponents.fire())
 
 app.onPragmaChange.add(pragma => {
     /**

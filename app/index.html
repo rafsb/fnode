@@ -1,28 +1,31 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
-    <!-- Begin: Basic Meta Tags -->
     <meta charset="UTF-8" />
     <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-eval' data: blob: filesystem: ws: gap: cdvfile: https://ssl.gstatic.com *; style-src * 'unsafe-inline'; script-src * 'unsafe-inline' 'unsafe-eval'; img-src * data: 'unsafe-inline'; connect-src * 'unsafe-inline'; child-src *; media-src *;"
     />
     <meta name="viewport" content="width=device-width, initial-scale=1, minimal-ui, viewport-fit=cover" />
     <meta name="mobile-web-app-capable" content="yes" />
-    <!-- Begin: Stylesheets -->    
-    <link rel="stylesheet" href="assets/css/faau.css"/>
-    <link rel="stylesheet" href="css/fonts.css"/>
-    <link rel="stylesheet" href="css/style.css"/>
+    <!-- Begin: Stylesheets -->
+    <link rel="stylesheet" href="assets/css/faau.css" />
+    <link rel="stylesheet" href="css/fonts.css" />
+    <link rel="stylesheet" href="css/style.css" />
+
     <!-- Begin: Scripts -->
     <script type="text/javascript" src="assets/js/faau.js"></script>
+    <script type="text/javascript" src="assets/js/fgraph.js"></script>
+
     <title>app</title>
 </head>
+
 <body id="app" class="-fixed -view -zero -content-center -no-scrolls -roboto-thin --background">
     <!-- Begin: Scripts -->
     <script type="text/javascript" src="config.js"></script>
-    <script type="text/javascript" src="js/preset.js"></script> 
+    <script type="text/javascript" src="js/preset.js"></script>
     <script type="text/javascript">
         (function() {
-            let
-            args = app.args();
+            let args = app.args();
             app.hash = args.hash ? app.storage("hash", args.hash) : app.storage("hash");
             app.guid = args.guid ? app.storage("guid", args.guid) : app.storage("guid");
             app.cuid = args.cuid ? app.storage("cuid", args.cuid) : app.storage("cuid");
@@ -31,4 +34,5 @@
         })()
     </script>
 </body>
+
 </html>

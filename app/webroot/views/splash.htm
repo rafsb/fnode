@@ -1,5 +1,5 @@
 <template>
-    <section id='screen-splash' class='-fixed -wrapper -inverted' style='background:@BACKGROUND; z-index:10000'>
+    <section id='splash' class='-fixed -wrapper -inverted' style='background:@BACKGROUND; z-index:10000'>
         <div class='-centered -content-center'>
             <i style="padding:.25em 3em">Loading</i>
             <div class='-row'>
@@ -8,8 +8,8 @@
         </div>
     </section>
     <script>
-        bootloader.onReadyStateChange.add(p => $('#screen-splash .--progress')[0].anime({ width: (100 * p) + '%'}));
-        bootloader.onFinishLoading.add(NULL => $('#screen-splash')[0].desappear(AL, true))
+        bootloader.onReadyStateChange.add(p => { $('#splash .--progress')[0].anime({ width: (100 * p) + '%' }) });
+        bootloader.onFinishLoading.add(NULL => $('#splash .--progress')[0].anime({ width: '100%' }).then(NULL => $('#splash')[0].desappear(AL, true)))
         setTimeout(NULL => bootloader.ready("splash"), AL*2)
     </script>
 </template>

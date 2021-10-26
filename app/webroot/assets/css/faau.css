@@ -1,6 +1,6 @@
 html { scroll-behavior: smooth }
 body { position: relative; text-align: inherit; animation-fill-mode: both; display:inline-block; zoom:1;font-size:1em;}
-body *:not(script):not(style) { 
+body *:not(script):not(style):not(li) { 
 	font-family: inherit;
 	position: relative;
 	display:inline-block;
@@ -93,7 +93,7 @@ script,style{ display: none !important; }
 
 .-relative      { position: relative }
 .-block         { display: block; }
-.-flex          { display: flex !important; flex-direction: row; flex-wrap: nowrap; justify-content: space-around; align-items: stretch; align-content: stretch; text-align: center; }
+.-flex          { display: flex; flex-direction: row; flex-wrap: nowrap; justify-content: space-around; align-items: stretch; align-content: stretch; text-align: center; }
 /* .-flex > * 		{ align-self:flex-start;  } */
 .-inline        { display: inline-block; }
 .-hide          { display: none; opacity: 0; }
@@ -112,7 +112,7 @@ script,style{ display: none !important; }
 .-box 			{ border-radius: .25em; box-shadow: 0 0 .25em rgba(0,0,0,.16); }
 .-box>*:not(.-keep):not(.-pointer), .-tile>*:not(.-keep):not(.-pointer) { pointer-events: none !important; }
 /* SIZENING */
-blur
+blur, modal
 , .-blur
 , .-wrapper { width:100%; height:100%; top: 0; left: 0; padding: 0; overflow-y:auto }
 .-wrapper       { position:relative }
@@ -217,7 +217,7 @@ input, select, textarea { outline:none }
 
 a { text-decoration: none }
 /* .--hintifyied:not(.--hintifyied-sp){ pointer-events:none; } */
-.-no-select { user-select: none; }
+.-no-select { user-select: none; -webkit-user-select:none; }
 
 .--debugbox {
 	border: 2px dashed red
