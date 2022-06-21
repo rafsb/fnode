@@ -10,12 +10,16 @@
 .-sourcesans-light  { font-family: 'Source Sans Pro', sans-serif; font-weight: 300; }
 .-sourcesans		{ font-family: 'Source Sans Pro', sans-serif; font-weight: 600; }
 .-sourcesans-bold   { font-family: 'Source Sans Pro', sans-serif; font-weight: 900; }
-*/
 
 @import url('https://fonts.googleapis.com/css?family=Roboto:100,300,500,900&display=swap');
-
-/*@import url('fonts/Roboto.css');*/
 .-roboto-thin   { font-family: 'Roboto', sans-serif; font-weight: 100; }
 .-roboto-light  { font-family: 'Roboto', sans-serif; font-weight: 300; }
 .-roboto        { font-family: 'Roboto', sans-serif; font-weight: 500; }
 .-roboto-bold   { font-family: 'Roboto', sans-serif; font-weight: 900; }
+*/
+
+@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@100;300;500;900&display=swap');
+.-heebo-thin   { font-family: 'Heebo', sans-serif; font-weight: 100; }
+.-heebo-light  { font-family: 'Heebo', sans-serif; font-weight: 300; }
+.-heebo        { font-family: 'Heebo', sans-serif; font-weight: 500; }
+.-heebo-bold   { font-family: 'Heebo', sans-serif; font-weight: 900; }

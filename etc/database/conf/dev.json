@@ -1,0 +1,6 @@
+{
+    "endpoint"  : "https://localhost"
+    , "key"     : ""
+    , "db"      : "core"
+    , "port"    : 3306
+}

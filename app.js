@@ -1,75 +1,116 @@
-global.NO_SET = 0
-global.UTF8 = global.utf8 = 'utf8';
-global.ROOT = __dirname + '/';
-global.argv = process.argv.slice(2)
+require('dotenv').config();
+
+global.PORT         = process.env.PORT       || 3000;
+global.IO_MODE      = process.env.IO_MODE*1  || 0;
+global.IS_DEV       = process.env.IS_DEV*1   || 0;
+global.VERBOSE      = process.env.VERBOSE*1  || 0;
+global.APP_LOCALE   = process.env.APP_LOCALE || "pt-br";
+global.PROFILE      = process.env.PROFILE;
+global.ROOT         = __dirname + '/';
+global.SESSION      = {};
 
 require('./lib/constants');
 
 const
-    PORT = 3000,
-    IO = LIB('io'),
-    classname = argv[0],
-    action = argv[1],
-    args = argv.slice(2),
-    { FDate } = LIB('faau');;
+IO                  = require(`./lib/io`)
+, express           = require('express')
+, cors              = require('cors')
+, parser            = require('body-parser')
+, session           = require('express-session')
+, crypto            = require('crypto')
+, app               = express()
+, router            = express.Router()
+// , key               = IO.read(`/etc/keys/${PROFILE}.key`)
+// , cert              = IO.read(`/etc/keys/${PROFILE}.crt`)
 
-global.LOG = (tx, persist = false, filename = 'default.log', carriage = false) => {
-    const m = (carriage ? '\r' : '') + FDate.as('<Y-m-d_h:i:s> ') + (typeof tx == 'object' ? JSON.stringify(tx) : tx);;
-    if (persist) IO.log(m, typeof pesist == 'string' ? persist : filename, EIO.APPEND);
-    if (carriage) process.stdout.write(m);
-    else console.log(m);
-}
+, { App, FObject } = require('./lib/il')
 
-global.COUT = (tx) => LOG(tx, false, null, true);
+;;
 
-if (classname == 'init') {
-    console.log('starting web server...');
+// app.keepAliveTimeout = 0;
 
-    const
-        express = require('express'),
-        parser = require('body-parser'),
-        app = express();;
+// *---------------------------------------------------*
+// *                   cors settings                   *
+// *---------------------------------------------------*
 
-    app.use(parser.json())
-    app.use(parser.urlencoded({ extended: true }))
-        // app.use(require('./router'));
+// app.use(cors({
+//     optionsSuccessStatus: 200,
+//     origin: (origin, callback) => callback(null, true)
+// }));
 
-    app.all('*', (req, res) => {
+// app.use((req, res, next) => {
+//     res.setHeader('Access-Control-Allow-Origin', HOST);
+//     next();
+// });
 
-        var path = '';
-        if (req.params && req.params[0]) path += req.params[0];
-        if (path == '/') path = EPaths.APP + 'index.html';
+// *---------------------------------------------------*
+router.use(session({ secret: `${crypto.randomBytes(100).toString('utf8')}`, resave: true, saveUninitialized: false }));
+router.use(parser.urlencoded({ extended: true, limit: '10mb' }));
+router.use(parser.json({ limit: '10mb' }));
+router.use(cors());
 
-        if (req.method != 'POST') {
-            ['', EPaths.ASSETS, EPaths.WEBROOT, EPaths.WEBVIEWS].forEach(prefix => IO.exists(prefix + path) && res.sendFile(prefix + path))
-        } else if (req.method == 'POST') {
-            try {
-                const
-                    cls_arr = req.params[0].split('/').filter(e => e),
-                    cls = cls_arr[0].slice(0, 1).toUpperCase() + cls_arr[0].slice(1),
-                    fn = cls_arr[1] || 'render',
-                    others = cls_arr.length > 2 ? { uri: cls_arr.slice(2) } : req,
-                    final = require(EPaths.WEBCONTROLLERS + cls);;
-                res.send(final[fn](req.body || others));
-            } catch (e) { IO.log('webserver::init > ' + JSON.stringify(e)) }
+router.get('/', (nill, res) => res.sendFile(EPaths.APP + 'index.html'))
+
+router.all('*', async (req={}, res) => {
+
+    SESSION = req.session;
+    var path = (req.params && req.params[0] ? req.params[0] : '').split('/').filter(e => e);
+
+    if (/robots.*\.txt$/gi.test(path.join('/'))) res.send('1');
+    else if (path[0] == "api") {
+        try {
+            const
+            cls = path[1].slice(0, 1).toUpperCase() + path[1].slice(1)
+            , action = path[2] || 'init'
+            , final = require(EPaths.WEBCONTROLLERS + cls.toLowerCase())
+            , tmp_args = App.blend(req.query, req.body)
+            ;;
+
+            const
+            b64 = tmp_args.encoded ? tmp_args.encoded.replace(/\s+/gi, '+') : ''
+            , u8 = b64 ? atob(b64).toString('utf8') : null
+            // , u8 = b64 ? Buffer.from(b64, 'base64').toString('utf8') : null
+            ;;
+
+            tmp_args.decoded = u8 && u8 != 'undefined' ? JSON.parse(u8) : null;
+            if (!tmp_args.decoded) delete tmp_args.decoded;
+
+            var
+            params = FObject.cast(tmp_args.decoded || tmp_args)
+            , result = final[action](!params.isNull() ? params : null)
+            ;;
+
+            if (result instanceof Promise) result = await result;
+
+            res.send(result)
+
+        } catch (e) {
+
+            err(`/api`, `*`, e.toString())
+            if (VERBOSE>2) console.trace(e);
+            res.send('')
+
         }
-
-    })
-    app.listen(action || PORT, NULL => console.log('server running under: http://localhost:' + (action || PORT)))
-} else {
-    console.log('\n----------------------------------------\n| CLI MODE                             |\n----------------------------------------\n\n');
-    [EPaths.APP, EPaths.LIB, EPaths.CONTROLLERS, EPaths.COLLECTORS, EPaths.VIEWS].forEach(prefix => {
-        const fullpath = prefix + classname + '.js';
-        if (IO.exists(fullpath)) {
-            const tmp = require(prefix + classname);;
-            try {
-                const a = tmp[action || 'render'](...args);
-                if (a && !(a instanceof Promise)) console.log(a)
-            } catch (e) {
-                LOG('APP > error trying to execute: ' + classname + '::' + (action || 'render') + '(' + args.join(',') + ') \n' + JSON.stringify(e, null, 4), 'error.log');
-                console.trace(e)
+    } else {
+        path = path.join('/');
+        var found = false;
+        [EPaths.WEBROOT, EPaths.ASSETS, EPaths.VIEWS].forEach(prefix => {
+            if (!found && IO.exists(prefix + path)) {
+                res.sendFile(prefix + path);
+                found = true
             }
-        }
-    })
-    console.log('\n\n|--------------------------------------|\n')
+        });
+        if (!found) res.send('')
+    }
+
+});
+
+app.use(router)
+
+try {
+    require("http").createServer(app).listen(PORT)
+    pass(`Server`, `init`, `running on port: ${PORT}`);
+} catch (e) {
+    err(`server`, `create`, e.toString())
+    if (VERBOSE>2) console.trace(e)
 }

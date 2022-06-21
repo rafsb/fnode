@@ -1,205 +1,291 @@
 const
-    PRISM = {
-        ALIZARIN: "#E84C3D",
-        PETER_RIVER: "#2C97DD",
-        SUN_FLOWER: "#F2C60F",
-        AMETHYST: "#9C56B8",
-        TURQUOISE: "#00BE9C",
-        EMERLAND: "#39CA74"
-
-        ,
-        POMEGRANATE: "#BE3A31",
-        BELIZE_HOLE: "#2F81B7",
-        ORANGE: "#F19B2C",
-        WISTERIA: "#8D48AB",
-        GREEN_SEA: "#239F85",
-        NEPHRITIS: "#30AD63"
-    };
+PRISM = {
+    ALIZARIN:"#E84C3D"
+    , PETER_RIVER:"#2C97DD"
+    , SUN_FLOWER:"#F2C60F"
+    , AMETHYST:"#9C56B8"
+    , TURQUOISE:"#00BE9C"
+    , EMERLAND: "#39CA74"
+    , POMEGRANATE: "#BE3A31"
+    , BELIZE_HOLE: "#2F81B7"
+    , ORANGE: "#F19B2C"
+    , WISTERIA: "#8D48AB"
+    , GREEN_SEA: "#239F85"
+    , NEPHRITIS: "#30AD63"
+};
 
 class FGraph {
 
-    axis(o) {
-        if (this.node) {
-
-            const
-                rects = this.rects,
-                fsize = app.em2px();;
+    axis(o){
+        if(o.node){
             // Y axis
-            !o.noyaxis && this.node.app(
-                SVG("path", "--axis --y", {
-                    d: [
-                        "M", [0, 0], "L", [0, rects.height]
-                    ].join(" ")
-                }, { "stroke-width": o.strokeWidth || 2, fill: "none", stroke: o.strokeColor || app.colors("FONT") + "44" })
+            !o.noyaxis && o.node.app(
+                SVG("path", "--axis --y", { d: `M 0,0 V ${rects.height}` }, { strokeWidth: o.strokeWidth, fill: "none", stroke: o.strokeColor })
             );
             // X axis
-            !o.noxaxis && this.node.app(
-                SVG("path", "--axis --x", {
-                    d: [
-                        "M", [0, rects.height], "L", [rects.width, rects.height]
-                    ].join(" ")
-                }, { "stroke-width": o.strokeWidth || 2, fill: "none", stroke: o.strokeColor || app.colors("FONT") + "44" })
+            !o.noxaxis && o.node.app(
+                SVG("path", "--axis --x", { d: `M 0,${rects.height} H ${rects.width}` }, { strokewidth: o.strokeWidth, fill: "none", stroke: o.strokeColor })
             )
         }
     }
 
-    guides(o) {
-        if (this.node) {
-
+    guides(o){
+        if(o.node){
             const
-                rects = this.rects,
-                fsize = app.em2px(),
-                ydots = 2 + (o.ydots || 2),
-                xdots = 2 + (o.xdots || 4),
-                ypace = rects.height / ydots,
-                xpace = rects.width / xdots,
-                node = this.node;;
+            ydots   = 2 + (o.ydots || 2)
+            , xdots = 2 + (o.xdots || 4)
+            , ypace = o.rects.height / ydots
+            , xpace = o.rects.width / xdots
+            ;;
             // Y Guides
-            !o.noxguides && app.iterate(0, xdots, i => {
-                node.app(
-                    SVG("path", "--guide --x", {
-                        d: [
-                            "M", [i * xpace, 0], "L", [i * xpace, rects.height]
-                        ].join(" ")
-                    }, { stroke: o.strokeColor || app.colors("FONT") + "0A", "stroke-width": o.strokeWidth || 1 })
+            !o.noxguides && spum.iterate(0, xdots, i => {
+                o.node.app(
+                    SVG("path", "--guide --x", { d: [ "M", [ i * xpace, 0 ], "V", rects.height ].join(" ") }, { stroke: o.strokeColor, strokeWidth: o.strokeWidth })
                 )
             });
             // X Guides
-            !o.noyguides && app.iterate(0, ydots, i => {
+            !o.noyguides&&spum.iterate(0, ydots, i => {
                 node.app(
-                    SVG("path", "--guide --y", {
-                        d: [
-                            "M", [0, i * ypace], "L", [rects.width, i * ypace]
-                        ].join(" ")
-                    }, { stroke: o.strokeColor || app.colors("FONT") + "0A", "stroke-width": o.strokeWidth || 1 })
+                    SVG("path", "--guide --y", { d: [ "M", [ 0, i * ypace ], "H", rects.width ].join(" ") }, { stroke: o.strokeColor, strokeWidth: o.strokeWidth })
                 )
             });
         }
     }
 
-    draw(o) {
-        if (this.target && this.node) {
-            app.series_ = o.series;
+    // LINE, WAVE, SMOOTH, CURVE and QUADRATIC
+    __DrawLines(o){
+        const
+        set = o.dataset.extract(x => x.status ? x : null)
+        , xmax    = o.colls ? o.colls : set.extract(item => item.plot.length).calc(MAX)
+        , ymax  = Math.max(1, set.extract(item => item.plot.calc(MAX)).calc(MAX) * (o.roof||1.01))
+        , xpace = o.rects.width / xmax
+        , h     = o.rects.height + 4
+        ;;
+
+        set.each((item, i) => {
+
+            if(!item.plot) return;
+
             const
-                target = this.target,
-                node = this.node,
-                rects = this.rects,
-                entities = o.series.extract(serie => serie.extract(s => s.key)[0]),
-                series = o.series.extract(serie => serie.extract(s => s.content.array())[0]),
-                labels = o.series.extract(serie => serie.extract(s => s.content.keys())[0])[0],
-                xmax = series.extract(s => s.length).calc(MAX),
-                ymax = Math.max(1, series.extract(s => s.calc(MAX)).calc(MAX) * 1.1),
-                fsize = app.em2px(),
-                xpace = rects.width / xmax,
-                colors = this.colors,
-                labelbar = DIV("-absolute -row -zero-bottom-left -flex"),
-                entitybar = DIV("-absolute -zero-top-right -flex", { padding: '.25em', 'flex-direction': 'column' });;
+            serie = item.plot//.tiny(xmax)
+            , color = item.color ? item.color : PRISM.array()[ i % PRISM.array().length ]
+            ;;
 
-            !o.nolabels && labels.tiny(2 + (o.xdots || 4)).each(l => labelbar.app(SPAN(l, '-ellipsis -content-center', { padding: '.25em' })))
+            var
+            type = item.type || o.type
+            , d = [ "M" ]
+            ;;
 
-            var type;;
-            switch (this.type.toLowerCase()) {
-                case "line":
-                    type = "L";
-                    break;
-                case "default":
-                    type = "L";
-                    break;
-                case "smooth":
-                    type = "S";
-                    break;
-                case "curve":
-                    type = "C";
-                    break;
-            }
+            switch(type) {
+                case EChartTypes.SMOOTH    : type = "S"; break;
+                case EChartTypes.WAVE      : type = "S"; break;
+                case EChartTypes.QUADRATIC : type = "Q"; break;
+                case EChartTypes.CURVE     : type = "C"; break;
+                default                    : type = "L"; break;
+            };
 
-            entities.each((name, idx) => {
-
+            serie.each((n, i) => {
+                n = Math.max(n, 0.01);
                 const
-                    serie = series[idx],
-                    color = colors[idx] ? colors[idx] : PRISM.array()[idx % PRISM.array().length],
-                    h = rects.height,
-                    d = ["M"];;
-
-                if (!serie.length) return;
-
-                // Calculate last posituin
-                serie.pop();
-                serie.push(serie.calc(TREND))
-                serie.push(serie.calc(TREND))
-
-                !o.noentities && entitybar.app(
-                    DIV("-content-right", { padding: ".25em", background: 'linear-gradient(to left, ' + o.css.background + ',' + o.css.background + ', transparent)' }).app(
-                        DIV("-right -circle", { height: "1em", width: "1em", marginLeft: "1em", background: color, border: '1px solid ' + app.colors('FONT') + '44' })
-                    ).app(
-                        SPAN(name, "-right")
-                    )
-                )
-
-                serie.each((n, i) => {
-
-                    n = n ? n : 0.0001;
-
-                    const
-                        x = parseInt(i * xpace),
-                        y = parseInt(Math.min(h - h * n / ymax, h - fsize * 2)),
-                        plate = node.get(".-hint-plate")[i];
-
-                    if (!plate) node.app(
-                        SVG("rect", "-hint-plate -pointer --tooltip", {
-                            width: type == "bars" ? fsize : xpace,
-                            height: type == "bars" ? h - y : h,
-                            x: x,
-                            y: type == "bars" ? h - y : 0
-                        }, {
-                            fill: type == "bars" ? color : app.colors("FONT") + 44,
-                            opacity: type == "bars" ? 1 : 0
-                        }).on("mouseenter", function() {
-                            $("#" + node.uid() + " .-hint-plate").not(this).stop().anime({ opacity: type == "bars" ? .32 : 0 });
-                            this.css({ opacity: type == "bars" ? 1 : .16 })
-                        }).on("mouseleave", function() {
-                            $("#" + node.uid() + " .-hint-plate").stop().anime({ opacity: type == "bars" ? .64 : 0 })
-                        }).data({ tip: "<b>" + labels[i] + "</b><br/>" + name + ": " + (n * 1.0).nerdify() + "<br/>" })
-                    );
-                    else plate.dataset.tip = plate.dataset.tip + name + ": " + (n * 1.0).nerdify() + "<br/>";
-
-                    if (type == "C") d.push([parseInt(x - xpace / 2), y]);
-                    d.push([x, y]);
-                    if (!i) d.push(type);
-                    if (type == "C") d.push([parseInt(x + xpace / 2), y]);
-                });
-
-                if (type == "S" && serie.length % 2 == 0) d.push([rects.width, (h * serie.last() / ymax)]);
-                if (type != "bars") node.app(SPATH(d.join(" "), "--line -avoid-pointer", { fill: "none", stroke: color, "stroke-width": 3 }))
+                x = parseInt(xpace / 2 + i * xpace)
+                , y = parseInt(Math.max(0, Math.min(h - h * n / ymax, h))) + 2
+                ;;
+                if(!i){
+                    d.push([ 0, y ]);
+                    d.push(type)
+                }
+                if(type=="C") d.push([ parseInt(x - xpace / 8 * 6), y ]);
+                if(type=="C") d.push([ parseInt(x - xpace / 8 * 2), y ]);
+                if(type=="S" || type=="Q") d.push([ parseInt(x - xpace / 4), y ]);
+                d.push([ x , y ]);
             });
 
-            target.app(entitybar).app(labelbar);
+            const final_y = parseInt(Math.max(0, Math.min(h - h * serie.last() / ymax, h) + 2)) ;;
+            if(type=="C") d.push([ parseInt(o.rects.width - xpad / 8 * 6), final_y ]);
+            if(type=="C") d.push([ parseInt(o.rects.width - xpad / 8 * 2), final_y ]);
+            if(type=="S" || type=="Q") d.push([ o.rects.width, final_y ]);
+            d.push([ o.rects.width , final_y ]);
 
-            app.tooltips();
+            if(o.type == EChartTypes.WAVE || o.type == EChartTypes.STACK_WAVE) d = d.concat([ 'V', h, 'H', 0, 'V', parseInt(Math.max(0, Math.min(h - h * serie[0] / ymax, h))), 'Z' ])
+
+            o.node.app(SPATH(d.join(" "), "--line -avoid-pointer", {
+                fill: o.type == EChartTypes.WAVE || o.type == EChartTypes.STACK_WAVE ? color : "none"
+                , stroke: color
+                , "stroke-width": 3
+            }))
+        })
+    }
+
+    // LINE, WAVE, SMOOTH, CURVE
+    __DrawBars(o, set){
+        const
+        xmax           = o.colls ? o.colls : set.plot.calc(MAX)
+        , ymax         = Math.max(1, set.extract(item => item.plot.length).calc(MAX) * (o.roof||1.01))
+        , xpace        = o.rects.width / xmax
+        , bar_per_unit = set.extract(item => item.plot.length).calc(MAX)
+        , h            = o.rects.height
+        , w            = Math.min(xpace / 2, o.barWidth || o.fsize)
+        ;;
+        set.extract((item, i) => {
+            if(!item.plot) return;
+            const
+            serie = item.plot//.tiny(xmax)
+            , color = item.color ? item.color : PRISM.array()[i % PRISM.array().length]
+            ;;
+            serie.each((n, j) => {
+                n = n ? n : .001;
+                const
+                x = j * xpace + xpace / bar_per_unit * i + w
+                , y = Math.max(o.fsize, Math.min(h - h * n / ymax, h))
+                ;;
+                o.node.app(SVG("rect", "-avoid-pointer", { width: w, height: h - y, x: x - w / 2, y: y }, { fill: color }))
+            })
+        })
+    }
+
+    // LINE, WAVE, SMOOTH, CURVE
+    __DrawGBars(o){
+        const
+        set = o.dataset.extract(x => x.status ? x : null)
+        , serie   = set.extract((item, i) => item.plot ? item.plot.calc(SUM) || .001 : .001)
+        , ymax  = Math.max(1, serie.calc(MAX) * o.roof)
+        , xpace = o.rects.width / serie.length
+        , h     = o.rects.height
+        , w     = Math.min(xpace / 2, o.barWidth || o.fsize)
+        ;;
+        serie.each((n, i) => {
+            const
+            rec = set[i]
+            , color = rec.color ? rec.color : PRISM.array()[i % PRISM.array().length]
+            , y = Math.max(o.fsize, Math.min(h - h * n / ymax, h))
+            , x =  xpace / 2 + i * xpace
+            ;;
+            o.node.app(SVG("rect", "-avoid-pointer --bar", { width: w, height: h - y, x: x - w / 2, y: y }, { fill: color }))
+        })
+    }
+
+    // LINE, WAVE, SMOOTH, CURVE
+    __DrawSBars(o){
+        const
+        set     = o.dataset.extract(x => x.status ? x : null)
+        , serie = set.extract((item, i) => item.serie ? item.serie.extract(x => x.length) : [])
+        , len   = serie.extract((serie, i) => serie.length).calc(MAX)
+        , xpace = o.rects.width / len
+        , h     = o.rects.height
+        , w     = Math.min(xpace / 2, o.barWidth || o.fsize)
+        , plot  = (new Array(len)).fill(0)
+        , flat  = (new Array(len)).fill(0)
+        ;;
+
+        serie.each(s => s.each((n, j) => flat[j] += n)) ;;
+        const ymax  = flat.calc(MAX) * o.roof ;;
+
+        serie.each((n, i) => {
+            const
+            color = set[i].color ? set[i].color : PRISM.array()[i % PRISM.array().length]
+            ;;
+            n.each((e, j) => {
+                const
+                x   = xpace / 2 + j * xpace
+                , y = h * (e / ymax + plot[j])
+                ;;
+                plot[j] += (e / ymax);
+                o.node.pre(SVG("rect", "-avoid-pointer", { width: w, height: h, x: x - w / 2, y: h - y }, { fill: color }))
+            })
+        })
+    }
+
+    draw(o){
+        if(o.target&&o.node){
+            if([ EChartTypes.LINE, EChartTypes.WAVE, EChartTypes.CURVE, EChartTypes.SMOOTH, EChartTypes.QUADRATIC ].indexOf(o.type) + 1) this.__DrawLines(o);
+            else if(o.type == EChartTypes.BAR) this.__DrawBars(o);
+            else if(o.type == EChartTypes.GROUPED_BAR) this.__DrawGBars(o);
+            else if(o.type == EChartTypes.STACK_WAVE) {
+                o.type = EChartTypes.WAVE;
+                this.__DrawLines(o);
+            } else if(o.type == EChartTypes.STACK_BAR) this.__DrawSBars(o)
+
+            if(o.type == EChartTypes.GROUPED_BAR){
+                o.node.app(
+                    SVG("rect", "-hint-plate -pointer --tooltip", { width: o.rects.width, height: o.rects.height, x: 0, y: 0 }, {
+                        fill: spum.colors("FONT") + '44'
+                        , opacity: 0
+                    }).data({ emitter: 'all', tip: o.dataset.extract((set, j) => {
+                        return set.status && set.plot ?
+                        `<b class='-row -flex' style='color:${set.color || PRISM.array()[i % PRISM.array().length]}'>\
+                            <span class='col-8 -content-left'>${set.label}:</span>\
+                            <span class='-col-4 -content-right' style='margin-left:1em'>${set.plot.calc(SUM).nerdify()}</span>\
+                        </b>` : null
+                    }).join('') })
+                )
+            } else {
+                const
+                xmax = o.colls ? o.colls : o.dataset.extract((set, i) => set.plot.calc(MAX) || 1).calc(MAX)
+                , xpace = o.rects.width / xmax
+                ;;
+                spum.iterate(0, xmax, i => {
+                    const
+                    plate = $(".-hint-plate", o.node)[i]
+                    , x = parseInt(i * xpace)
+                    ;;
+                    if(!plate) o.node.app(
+                        SVG("rect", "-hint-plate -pointer --tooltip", {
+                            width: xpace
+                            , height: o.rects.height
+                            , x: x
+                            , y: 0
+                        }, {
+                            fill: spum.colors("FONT") + '44'
+                            , opacity: 0
+                        }).data({ emitter: i, tip: o.dataset.extract((set, j) => {
+                            return set.status && set.plot ?
+                            `<b class='-row -flex' style='color:${o.dataset[j].color || PRISM.array()[i % PRISM.array().length]}'>\
+                                <span class='col-8 -content-left -ellipsis'>${o.dataset[j].label}:</span>\
+                                <span class='-col-4 -content-right'>${(set.plot[i] ? set.plot[i] : 0).nerdify()}</span>\
+                            </b>` : null
+                        }).join('') })
+                    )
+                })
+
+                $(".-hint-plate", o.node).each((el, i) => el.on("mouseenter", function(){
+                    $("#" + o.node.uid() + " .-hint-plate").not(this).each((el, i) => el.anime({ opacity: 0 }));
+                    this.css({ opacity: .32 })
+                    o.node.plate_emitter = this.dataset.emitter == 'all' ? null : this.dataset.emitter * 1
+                }).on("mouseleave", function(){
+                    $("#" + o.node.uid() + " .-hint-plate").each((el, i) => el.stop().anime({ opacity: .08 }))
+                }))
+            }
+
+            o.target.get('.-hint-plate').each((e, i) => e.raise())
+            spum.tooltips();
         }
     }
 
     constructor(o) {
-        this.target = (o.target || (this.target || $("#app")[0])).css({ overflow: 'hidden' }).empty();
-        this.rects = this.target.getBoundingClientRect();
-        this.type = o.type || "line";
-        this.colors = o.colors || PRISM;
+        o.target = (o.target || $("#application")[0]).css({ overflow: 'hidden' }).empty()
+        o.rects  = o.target.getBoundingClientRect()
+        o.css    = binds({ background: spum.colors("BACKGROUND") }, o.css || {})
+        o.type   = o.type || EChartTypes.SMOOTH
+        o.colls  = o.colls || (o.dataset ? o.dataset.extract((x, i) => x.plot ? x.plot.length || 1 : 1).calc(MAX) : 12)
+        o.roof   = o.roof || 1.1
+        o.fsize  = spum.em2px()
+        o.node   = SVG("svg", "-absolute -zero", binds({
+            height: o.rects.height
+            , width: o.rects.width
+            , "viewBox": "0 0 " + o.rects.width + " " + o.rects.height
+        }, o.attr || {}), o.css)
 
-        o.css = binds({ background: app.colors("BACKGROUND") }, o.css || {})
+        o.target.app(o.node)
 
-        if (!this.node) {
-            const
-                cls = "-absolute -zero",
-                attr = binds({ height: this.rects.height, width: this.rects.width, "viewBox": "0 0 " + this.rects.width + " " + this.rects.height }, o.attr || {}),
-                css = binds({}, o.css || {});;
-            this.node = SVG("svg", cls, attr, css)
-        }
-        this.target.app(this.node);
+        const base = { color: spum.color_pallete.FONT+"AA", strokeColor: spum.color_pallete.FONT+"22", strokeWidth: 2} ;;
+        if(!o.noaxis) o.axis(binds(base, o.axis || {}));
+        if(!o.noguides) o.guides(binds(base, o.guides || {}));
 
-        const pallete = app.colors(),
-            base = { color: pallete.FONT + "AA", strokeColor: pallete.FONT + "22" };
-        if (!o.noaxis) this.axis(binds(base, o.axis || {}));
-        if (!o.noguides) this.guides(binds(base, o.guides || {}));
-        if (o.series && o.series.length) this.draw(o);
+        if(o.dataset && o.dataset.length) this.draw(o)
+        this.node = o.node
+    }
+
+    static create(o){
+        return new FGraph(o)
     }
 }

@@ -1,6 +1,6 @@
 html { scroll-behavior: smooth }
-body { position: relative; text-align: inherit; animation-fill-mode: both; display:inline-block; zoom:1;font-size:1em;}
-body *:not(script):not(style):not(li) { 
+body { position: relative; text-align: inherit; animation-fill-mode: both; display:inline-block; zoom:1;}
+body *:not(script):not(style):not(li){
 	font-family: inherit;
 	position: relative;
 	display:inline-block;
@@ -11,7 +11,7 @@ body *:not(script):not(style):not(li) {
 	vertical-align: middle;
 }
 script,style{ display: none !important; }
-
+input, select, textarea, button { font-size: 1em; }
 .-view 			{ width:100vw;height:  100vh; top: 0; left: 0; padding: 0; overflow: hidden; margin: 0 }
 .-fixed         { position: fixed !important; }
 .-absolute      { position: absolute !important; }
@@ -88,8 +88,8 @@ script,style{ display: none !important; }
 	.-ht-third-min,  .-ht-quart-min,
 	.-ht-third-max,  .-ht-quart-max { height: auto; }
 	.-mob-hide { display: none; }
-	body { font-size: .75em  }
-} 
+	body { font-size: 12px  }
+}
 
 .-relative      { position: relative }
 .-block         { display: block; }
@@ -129,16 +129,16 @@ blur
 .-no-scrolls    { overflow: hidden }
 .-singleline	{ white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
 .-pointer-and-spin
-, .-pointer     { 
+, .-pointer     {
 	pointer-events: none !important;
-	transition: all .4s ease; 
-	cursor: pointer; 
-	opacity: .8; 
+	transition: all .4s ease;
+	cursor: pointer;
+	opacity: .8;
 	touch-action: none;
 	/*-webkit-tap-highlight-color: transparent;*/
 }
 .-only-pointer
-,.-link  { 
+,.-link  {
 	transition: all .4s ease;
 	cursor: pointer;
 	pointer-events: all !important;
@@ -213,6 +213,24 @@ input, select, textarea { outline:none }
 	0% { transform: translateY(0) }
 	50% { transform: translateY(50%) }
 	100% { transform: translateY(0) }
+}
+
+.-loading-outerbar {
+	min-height: .25em;
+	min-width: 600px;
+	border-radius:.25em;
+	overflow:hidden;
+	text-align: left;;
+}
+.-loading-innerbar {
+	width:100%;
+	height:.25em;
+	animation: loading-innerbar-kf 4s ease-in-out infinite;
+}
+@keyframes loading-innerbar-kf {
+	0% { transform: translateX(-100%) }
+	50% { transform: translateX(25%) }
+	100% { transform: translateX(100%) }
 }
 
 a { text-decoration: none }

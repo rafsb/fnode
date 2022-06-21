@@ -1,9 +1,65 @@
 <template>
+    <nav class="-row -content-center" style="padding:.5em 1em">
+        <!-- DROPDOWN MENU -->
+        <div class="-right -relative" onclick="this.$('nav')[0].css({ display:'block' })">
+            <div class="-row -only-pointer">
+                <div class='-right -only-pointer' style="padding: 2em">
+                    <img class="-centered" src="assets/img/icons/ellipsis-v.svg" style="height: 3em; padding:.5em" />
+                </div>
+            </div>
+            <nav class="-absolute -zero-top-right"
+                style="
+                    top:5em;
+                    right:0;
+                    min-width:20em;
+                    background:@FOREGROUND;
+                    border-radius:.5em;
+                    box-shadow:0 -1em 2em @DARK4;
+                    display:none"
+                onmouseleave="this.css({ display:'none' })"
+                onclick="this.css({ display:'none' })">
+                <span class="-absolute -zero-top-right" style="
+                    transform:translate(-.5em, -2.5em);
+                    width:0;
+                    height:0;
+                    border:1.5em solid transparent;
+                    border-bottom-color: @FOREGROUND;
+                "></span>
 
-    <!-- HEADER BAR -->
-    <header class='-row -flex -content-center'>
-        <!-- content -->
-    </header>
+                <!-- PROFILE -->
+                <div class="-row -pointer" onclick="window.app.warn(`Estamos trabalhando nesta <i>feature</i>`)">
+                    <div class='-left' style="height:2.5em;width:2.5em;border-radius:1.25em;background:@LIGHT2;margin:.5em;padding:0 .5em;">
+                        <img class="-centered" src="assets/img/icons/user.svg" style="height: 2.5em; padding:.5em" />
+                    </div>
+                    <span class="-left -content-left" style="width:calc(100% - 4em);padding:1em .5em">Perfil</span>
+                </div>
+
+                <!-- NOTIFICATIONS -->
+                <div class="-row -pointer" onclick="window.app.warn(`Estamos trabalhando nesta <i>feature</i>`)" style="cursor:not-allowed;opacity:.32">
+                    <div class='-left' style="height:2.5em;width:2.5em;border-radius:1.25em;background:@LIGHT2;margin:.5em;padding:0 .5em;">
+                        <img class="-centered" src="assets/img/icons/bell.svg" style="height: 2.5em; padding:.5em" />
+                    </div>
+                    <span class="-left -content-left" style="width:calc(100% - 4em);padding:1em .5em">Alertas</span>
+                </div>
+
+                <!-- LOGOFF -->
+                <div class="-row -pointer"
+                    onclick="window.app.warn(`Estamos trabalhando nesta <i>feature</i>`)"
+                    style="
+                        border-radius: .25em;
+                        background: @ALIZARIN;
+                        color: @FOREGROUND
+                        cursor:not-allowed;">
+                    <div class='-left' style="height:2.5em;width:2.5em;border-radius:1.25em;background:@LIGHT2;margin:.5em;padding:0 .5em;">
+                        <img class="-inverted -centered" src="assets/img/icons/cross.svg" style="height: 2.5em; padding:.5em" />
+                    </div>
+                    <span class="-left -content-left" style="color:@FOREGROUND;width:calc(100% - 4em);padding:1em .5em;">Logoff</span>
+                </div>
+
+            </nav>
+        </div>
+
+    </nav>
 
     <script>
         bootloader.ready("header")

@@ -52,3 +52,9 @@ Thumbs.db
 # CUSTOM
 **/var/*
 package-lock.json
+
+.bitbucket
+.gitlog
+.READY
+*.OLD
+package-lock.json

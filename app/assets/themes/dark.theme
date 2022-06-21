@@ -1,0 +1,8 @@
+{
+    "BACKGROUND" : "#1E1E1E"
+    , "FOREGROUND" : "#333333"
+    , "FONT" : "#C8D4C8"
+    , "FONTBLURED":"#868686"
+    , "SPAN" :"#007ACC"
+    , "DISABLED": "#C74E39"
+}

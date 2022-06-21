@@ -1,13 +1,13 @@
 <template>
-
     <!-- HOME WRAPPER-->
-    <div id="home" class="-fixed -wrapper -scrolls">
-        <!-- content -->
+    <div id='home' class='-fixed -wrapper -scrolls'>
+
     </div>
-        
+    <div id='header' class='-fixed -zero -row'></div>
+
     <!-- SCRIPS -->
     <script>
-        app.load("components/header.htm", null, $('#home')[0])
-        bootloader.ready("home")
+        app.load(`components/header.htm`, null, $(`#header`)[0]) ;;
+        bootloader.ready(`home`)
     </script>
 </template>

@@ -1,0 +1,14 @@
+{
+    "FOREGROUND" : "#FFFFFF"
+    , "BACKGROUND" : "#ECF1F2"
+    , "FONT" : "#2C3D4F"
+    , "FONTBLURED":"#7E8C8D"
+    , "SPAN" :"#A6A6A6"
+    , "DISABLED": "#E2E2E2"
+    , "H1":"#004690"
+    , "H2":"#0096D8"
+    , "C1":"#006ab4"
+    , "C2":"#72217b"
+    , "C3":"#00a3a1"
+    , "CN":"#A6A6A6"
+}

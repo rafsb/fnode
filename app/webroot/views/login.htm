@@ -1,0 +1,61 @@
+<template>
+
+    <!-- LOGIN -->
+    <section id='login' class='-fixed -wrapper' style='background:@FOREGROUND;'>
+        <form action='javascript:void(0)' onsubmit='window.login(this.json())' class='-col-2 -centered -content-center' style="padding:1em; border-radius:.5em;border:1px solid @DARK2;background:@BACKGROUND">
+            <h2>LOGIN</h2>
+            <div class='-row'>
+
+                <!-- USUÁRIO -->
+                <div class='-row -flex' style='margin-bottom: 1em'>
+                    <label class='-col-4 -content-right' style='padding:1em'>USUÁRIO</label>
+                    <input type='user' name='user' class='-col-8' required/>
+                </div>
+
+                <!-- SENHA -->
+                <div class='-row -flex' style='margin-bottom: 1em'>
+                    <label class='-col-4 -content-right' style='padding:1em'>SENHA</label>
+                    <input type='password' name='pswd' class='-col-8 -hash' required/>
+                </div>
+
+                <!-- SUBMIT -->
+                <input type='submit' class='-row -pointer' style="background:@DARK3;margin:2em 0" value='ENVIAR'/>
+            </div>
+        </form>
+    </section>
+
+    <!-- STYLESHEET -->
+    <style>
+        #login h2 {
+            opacity: .32
+        }
+
+        #login input {
+            padding:1em;
+            border-radius:.5em;
+            border:none;
+            background:@DARK1;
+        }
+
+    </style>
+
+    <!-- SCRIPTS -->
+    <script>
+        binds(window, {
+            login: form => {
+                app.call(EPaths.API + 'user/sign', form).then(res => {
+                    res = res.data.json();
+                    if(res.status){
+                        app.storage('hash', res.data);
+                        app.success('Login efetuado, reiniciando sistema...');
+                        setTimeout(Void => location.reload(), AL * 4)
+                    } else app.error('Algo saiu errado! Tente novamente e verifique se suas credenciais estão corretas...')
+                })
+            }
+
+        })
+
+        app.loading(0)
+    </script>
+
+</template>

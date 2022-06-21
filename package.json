@@ -1,26 +1,36 @@
 {
-  "name": "flib",
-  "version": "1.0.0",
-  "description": "",
+  "name": "fnode",
+  "version": "0.1-alpha",
+  "description": "base system initial setup",
   "main": "app.js",
-  "directories": {
-    "lib": "lib"
-  },
   "scripts": {
-    "test": "4"
+    "test": "export IS_DEV=1 && export VERBOSE=3 && ./node_modules/nodemon/bin/nodemon.js --no-warnings app",
+    "start": "export IS_DEV=0 && export VERBOSE=0 && node --no-warnings app"
   },
-  "repository": {
-    "type": "git",
-    "url": "4"
-  },
-  "keywords": [
-    "4"
-  ],
   "author": "rafsb",
   "license": "ISC",
   "dependencies": {
-    "body-parser": "^1.19.0",
-    "express": "^4.17.1",
-    "https": "^1.0.0"
-  }
+    "body-parser": "^1.19.2",
+    "bottleneckp": "^1.1.3",
+    "compression": "^1.7.4",
+    "cors": "^2.8.5",
+    "crypto": "^1.0.1",
+    "dotenv": "^16.0.0",
+    "express": "^4.17.3",
+    "express-session": "^1.17.3",
+    "https": "^1.0.0",
+    "md5": "^2.3.0",
+    "nodemon": "^2.0.15",
+    "path": "^0.12.7",
+    "rss-parser": "^3.12.0",
+    "seenreq": "^3.0.0",
+    "session": "^0.1.0",
+    "xml-parser": "^1.2.1",
+    "zlib": "^1.0.5"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rafsb/fnode.git"
+  },
+  "homepage": "https://github.org/rafsb/fnode#readme"
 }
