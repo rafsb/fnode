@@ -1,36 +1,25 @@
 {
-  "name": "fnode",
-  "version": "0.1-alpha",
+  "name": "katalize",
+  "version": "1.0.0",
   "description": "base system initial setup",
   "main": "app.js",
   "scripts": {
-    "test": "export IS_DEV=1 && export VERBOSE=3 && ./node_modules/nodemon/bin/nodemon.js --no-warnings app",
-    "start": "export IS_DEV=0 && export VERBOSE=0 && node --no-warnings app"
+    "start": "node --no-warnings ./node_modules/nodemon/bin/nodemon.js app",
+    "dev": "nodemon --no-warnings app"
   },
-  "author": "rafsb",
+  "author": "r_sb",
   "license": "ISC",
   "dependencies": {
-    "body-parser": "^1.19.2",
-    "bottleneckp": "^1.1.3",
-    "compression": "^1.7.4",
-    "cors": "^2.8.5",
-    "crypto": "^1.0.1",
-    "dotenv": "^16.0.0",
-    "express": "^4.17.3",
-    "express-session": "^1.17.3",
-    "https": "^1.0.0",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
     "md5": "^2.3.0",
-    "nodemon": "^2.0.15",
-    "path": "^0.12.7",
-    "rss-parser": "^3.12.0",
-    "seenreq": "^3.0.0",
-    "session": "^0.1.0",
-    "xml-parser": "^1.2.1",
-    "zlib": "^1.0.5"
+    "mysql2": "^3.4.3",
+    "nodemon": "^2.0.22",
+    "sha256": "^0.2.0",
+    "spdy": "^4.0.2",
+    "ws": "^8.12.0"
   },
   "repository": {
-    "type": "git",
-    "url": "git+https://github.com/rafsb/fnode.git"
-  },
-  "homepage": "https://github.org/rafsb/fnode#readme"
+    "type": "git"
+  }
 }

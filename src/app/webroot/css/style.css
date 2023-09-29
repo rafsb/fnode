@@ -1,0 +1,150 @@
+/* Custom Scrollbar */
+::-webkit-scrollbar { width: .5rem; }
+::-webkit-scrollbar-track { background: rgba(0,0,0,.16); }
+::-webkit-scrollbar-thumb { background: rgba(0,0,0,.32); border-radius: .5rem; border:none;height:1em; width:1em;}
+
+ol, li, ul  {
+    padding: 0;
+    margin: 0;
+}
+
+
+input, select, textarea, button {
+    padding: .5em 1em;
+    border-radius: .25em;
+    border: 2px solid lightgray;
+}
+input, select, textarea {
+    background: #ffffff88
+}
+button {
+    background: #ffffffcc
+}
+
+select option {
+    background: #fff;
+}
+
+table { border-collapse: collapse; width: 100%; color: inherit }
+tr { width:100%; }
+tr:nth-child(odd) { background: #fff2; }
+tr:nth-child(even) { background: #0002; }
+td, th { border: 1px solid #00000022; text-align: left; padding: .5em;white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+@media only screen and (max-width: 1920px) {
+    /* body { font-size: 14px;  } */
+}
+
+
+/** EDITORS **/
+
+.-editor label {
+    padding:1em 0 .25em;
+    overflow-x: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.-editor .-picker-stage {
+    background:rgba(0,0,0,.08);
+    border-radius:.5em;
+    padding:1em 2em 2em;
+    border:1px solid rgba(0,0,0,.16);
+}
+.-editor .--anchor {
+    padding:.5em 0 2em 0;
+    opacity:.64;
+    margin-top: 2em;
+}
+
+.-editor .-separator {
+    height: 1px;
+    width:100%;
+    bottom:1em;
+    background-color: rgba(0,0,0,.24);
+}
+
+/* % animation and position */
+.input-group {
+    position: relative;
+    padding: 0 .25em 0 0
+}
+
+.input-group__input {
+    font: inherit;
+    color: black;
+    border: none;
+    border-radius: 4px;
+    outline: 2px solid #E4E4E4;
+    background-color: transparent;
+    transition: outline-color 500ms;
+}
+
+/*.input-group__input:is(:focus, :valid){*/
+.input-group__input:is(:focus){
+    outline-color:rgb(58, 58, 58) ;
+}
+
+.input-group__label {
+    position: absolute;
+    top: 0;
+    left: 0;
+    translate: .5em .5em;
+    color:#000;
+    transition: translate 500ms, scale 500ms;
+    padding: 0 !important;
+}
+
+
+.input-group__input:focus +
+.input-group__label
+/*, .input-group__input:valid +
+.input-group__label*/ {
+    paddinginline: 5px;
+    translate: 8px 0px;
+    scale: 0.8;
+    background-color: #F8F8F7;
+}
+
+
+/* click on the header to sort */
+.-clicked {
+    opacity: 1;
+}
+
+@media print {
+
+    body {
+        visibility: hidden;
+    }
+
+}
+
+.-print {
+    visibility: visible;
+    margin: 0;
+    width: 100%;
+    background: white;
+    page-break-after: always;
+    text-align: center;
+}
+
+.-print * {
+    visibility: visible;
+}
+
+.-page {
+    width: 21cm;
+    min-height: 29.7cm;
+    padding: 2cm;
+    margin: 1cm auto;
+    border: 1px #D3D3D3 solid;
+    border-radius: .5em;
+    background-color: red;
+}
+
+@page {
+    size: A4;
+    margin: 0;
+}

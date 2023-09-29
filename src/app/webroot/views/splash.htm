@@ -1,0 +1,14 @@
+<template>
+
+    <main class='fixed wrap invert --splash' style="background:#1C2126;z-index:10000">
+        <img src="loading.gif" class="centered" style="height:6em">
+        <div class="absolute zero bar --boot-progress" style="width:1%;mix-blend-mode:difference"></div>
+    </main>
+
+    <script>
+        bootloader.onReadyStateChange.add(p => $('.--boot-progress').at()?.anime({ width: `${p*100}%` }))
+        bootloader.onFinishLoading.add(_ => $('.--boot-progress').at()?.anime({ width: `100%` }).then(_ => $('.--splash').at()?.disappear(AL, true)))
+        bootloader.ready('splash')
+    </script>
+
+</template>

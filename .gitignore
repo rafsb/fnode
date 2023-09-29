@@ -6,7 +6,7 @@
 # Node artifact files
 node_modules/
 var/
-dist/
+# dist/
 
 # Compiled Java class files
 *.class
@@ -22,7 +22,7 @@ dist/
 
 # Maven
 target/
-dist/
+# dist/
 
 # JetBrains IDE
 .idea/
@@ -57,4 +57,8 @@ package-lock.json
 .gitlog
 .READY
 *.OLD
-package-lock.json
+
+**/test.js
+
+.session_db
+**/.env

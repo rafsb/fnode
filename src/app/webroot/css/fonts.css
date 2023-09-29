@@ -1,0 +1,18 @@
+/* FONTS * /
+
+ @import url('https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,600,900&display=swap');
+.-sourcesansft-light  { font-family: 'Source Sans Pro', sans-serif; font-weight: 300; }
+.-sourcesans		{ font-family: 'Source Sans Pro', sans-serif; font-weight: 600; }
+.-sourcesansft-bold   { font-family: 'Source Sans Pro', sans-serif; font-weight: 900; }
+* /
+
+*/
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;500;700;900&family=Ubuntu:wght@300;400;500;700&display=swap');
+.-roboto-thin   { font-family: 'Roboto', sans-serif; font-weight: 100; }
+.-robotoft-light  { font-family: 'Roboto', sans-serif; font-weight: 300; }
+.-roboto        { font-family: 'Roboto', sans-serif; font-weight: 500; }
+.-robotoft-bold   { font-family: 'Roboto', sans-serif; font-weight: 900; }
+.-ubuntu-thin   { font-family: 'Ubuntu', sans-serif; font-weight: 300; }
+.-ubuntuft-light  { font-family: 'Ubuntu', sans-serif; font-weight: 400; }
+.-ubuntu        { font-family: 'Ubuntu', sans-serif; font-weight: 500; }
+.-ubuntuft-bold   { font-family: 'Ubuntu', sans-serif; font-weight: 700; }

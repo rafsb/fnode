@@ -1,8 +1,0 @@
-<template>
-    <section id='splash' class='-fixed -zero'></section>
-    <script>
-        app.loading(true, null, 'Carregando...')
-        bootloader.onFinishLoading.add(NULL => { $('#splash')[0].desappear(AL, true) })
-        bootloader.ready("splash")
-    </script>
-</template>

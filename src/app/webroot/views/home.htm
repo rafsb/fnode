@@ -1,0 +1,55 @@
+<template>
+    <!-- HOME -->
+    <div id="home" class='wrap no-scrolls'>
+        <main class="fixed zero wrap scrolls --stage" style="padding:3em 0 1.5em 0"></main>
+        <header class="absolute fixed zero row" style="background: {{belize_hole}};overflow:visible;z-index:100;height:3em">
+            <span class="left -roboto-thin only-pointer" style="padding:1em 2em;color:{{background}};transform:scale(1.2)" onclick="fw.get('.-ft-lightbox,.--window,.--dialog').disappear(null, true)">L·O·G·O</span>
+            <nav class="right content-center" style="paddingright:.5em;;">
+                <div style="overflow:visible">
+                    <div class="relative right" style=";" onclick="{
+                        const state = this.dataset.state * 1 ;;
+                        this.dataset.state = state ? 0 : 1
+                        this.$('div.--dropdown')[0].css({ display: state ? 'none' : 'block' })
+                    }">
+                        <img src="icons/ellipsis-v.svg" class="invert pointer" style="height:3em;width:3em;padding:1em">
+                        <div class="absolute zero-topright --dropdown" style="width:14em;top:3.5em;right:1.5em;display:none;background:{{span}};color:{{background}};;">
+                            <div class="relative wrap" style="overflow: visible;">
+                                <div class="absolute zero-topright" style="height: 0;width:0; border:.5em solid transparent; border-bottom-color:{{foreground}};border-right-color:{{foreground}};top:calc(2px - 1em);"></div>
+                                <button class="row pointer content-left" style="border:none;background:{{foreground}};color:{{font}};padding:.5em 1em;border-radius:0" onclick="{
+                                    fw.working()
+                                }">Perfil</button>
+                                <button class="row pointer content-left" style="border:none;background:{{pomegranate}};padding:.5em 1em;border-radius:0" onclick="{
+                                    fw.storage('uat', '')
+                                    setTimeout(_ => location.href = location.href.split('?')[0], 128)
+                                }">Sair</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="right" style="paddingright:0em">
+                        <div class="relative left circle no-scrolls" style="background:{{mask3}};height:3em;width:3em;transform:scale(.64)">
+                            <img src="icons/user.svg" class="centered invert circle" style="height:2em;width:2em">
+                        </div>
+                        <span id="header-username" class="left ellipsis" style="color:{{background}}aa;padding:1em 0;max-width:40em;text-transform:capitalize;transform:translateY(-.125em)"></span>
+                    </div>
+                </div>
+            </nav>
+        </header>
+        <footer class="absolute fixed zero-bottom row content-right" style="background:{{SPAN}};z-index:100; padding:.25em .5em">
+            <i style="color:{{foreground}};font-size:.75em;transform:translateY(-.125em)">2023 - Todos os direitos reservados</i>
+        </footer>
+    </div>
+
+    <script>
+        (async app => {
+            /**
+             * HOME MAGIC
+            */
+           app.stage = $('#home>main.--stage')[0]
+           app.load('components/welcome.htm', null, app.stage)
+           bootloader.onFinishLoading.add(x =>{
+               $('#header-username').html(fw.components.user.nome || fw.components.user.usuario)
+           })
+
+        })(fw)
+    </script>
+</template>

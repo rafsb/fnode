@@ -1,116 +1,92 @@
-require('dotenv').config();
+/*---------------------------------------------------------------------------------------------
+ * APP.JS
+ *---------------------------------------------------------------------------------------------
+ */
+process.env.UV_THREADPOOL_SIZE = require('os').cpus().length * 2
 
-global.PORT         = process.env.PORT       || 3000;
-global.IO_MODE      = process.env.IO_MODE*1  || 0;
-global.IS_DEV       = process.env.IS_DEV*1   || 0;
-global.VERBOSE      = process.env.VERBOSE*1  || 0;
-global.APP_LOCALE   = process.env.APP_LOCALE || "pt-br";
-global.PROFILE      = process.env.PROFILE;
-global.ROOT         = __dirname + '/';
-global.SESSION      = {};
+require('dotenv').config({ path: `./.env` })
 
-require('./lib/constants');
+global.HOST             = process.env.HOST
+global.PORT             = process.env.PORT             || 3000
+global.VERBOSE          = process.env.VERBOSE * 1      || 0
+global.DB_DOC_SIZE      = process.env.DB_DOC_SIZE * 1  || 1024
+global.VERSION          = process.env.VERSION          || "0.0.1-alpha"
+global.DB_DRIVER        = process.env.DB_DRIVER        || "fstore"
+global.DB_NAME          = process.env.DB_NAME          || "core"
+global.DB_USER          = process.env.DB_USER          || ""
+global.DB_PASSWORD      = process.env.DB_PASSWORD      || ""
+global.DB_PK            = process.env.DB_PK            || ""
+global.DB_KEY           = process.env.DB_KEY           || ""
+global.DB_ENDPOINT      = process.env.DB_ENDPOINT      || ""
+global.DB_PORT          = process.env.DB_PORT          || ""
+global.SESSION_DURATION = process.env.SESSION_DURATION || 24 * 60
+global.ROOT             = __dirname + '/src/'
 
 const
-IO                  = require(`./lib/io`)
-, express           = require('express')
-, cors              = require('cors')
-, parser            = require('body-parser')
-, session           = require('express-session')
-, crypto            = require('crypto')
-, app               = express()
-, router            = express.Router()
-// , key               = IO.read(`/etc/keys/${PROFILE}.key`)
-// , cert              = IO.read(`/etc/keys/${PROFILE}.crt`)
-
-, { App, FObject } = require('./lib/il')
-
+path        = require('path')
+, fio       = require('./src/lib/utils/fio')
+, ftext     = require('./src/lib/utils/ftext')
+, fdate     = require('./src/lib/utils/fdate')
+, express   = require('express')
+, parser    = require('body-parser')
+, app       = express()
+, key       = fio.read("etc/keys/key.pem")
+, cert      = fio.read("etc/keys/cert.pem")
+, ca        = fio.read("etc/keys/csr.pem")
 ;;
 
-// app.keepAliveTimeout = 0;
+global.KEY = fio.read('/etc/keys/private.key')
+require('./src/lib/constants')
+
+console.log()
+console.log(ftext.fill("", "-", Math.min(process.stdout.columns, 64)))
+console.log(
+    ETerminalColors.BOLD + ' ENV VARS: \n   ' + ETerminalColors.BOLD_OFF
+    + fio.read("../.env")
+        .trim()
+        .split(/\n/g)
+        .filter(line => line.split('#')[0])
+        .map(line => ETerminalColors.FT_BLUE + line.replace('=', ETerminalColors.FT_BLACK + '=' + ETerminalColors.BOLD + ETerminalColors.FT_WHITE) + ETerminalColors.BOLD_OFF + ETerminalColors.RESET)
+        .join("\n   ")
+)
+console.log(ftext.fill("", "-", Math.min(process.stdout.columns, 64)))
+console.log()
 
 // *---------------------------------------------------*
-// *                   cors settings                   *
+// *                 session settings                  *
 // *---------------------------------------------------*
-
-// app.use(cors({
-//     optionsSuccessStatus: 200,
-//     origin: (origin, callback) => callback(null, true)
-// }));
-
-// app.use((req, res, next) => {
-//     res.setHeader('Access-Control-Allow-Origin', HOST);
-//     next();
-// });
+app.set('trust proxy', 1)
+app.use(parser.urlencoded({ extended: true, limit: '20mb' }))
+app.use(parser.json({ limit: '20mb' }))
 
 // *---------------------------------------------------*
-router.use(session({ secret: `${crypto.randomBytes(100).toString('utf8')}`, resave: true, saveUninitialized: false }));
-router.use(parser.urlencoded({ extended: true, limit: '10mb' }));
-router.use(parser.json({ limit: '10mb' }));
-router.use(cors());
+// *                 router settings                   *
+// *---------------------------------------------------*
+app.use(express.static(path.join(ROOT, 'app/webroot')))
+app.use(express.static(path.join(ROOT, 'app/webroot/assets')))
+app.use(express.static(path.join(ROOT, 'app/webroot/assets/img')))
+app.use(express.static(path.join(ROOT, 'app/webroot/assets/dicts')))
+app.use(express.static(path.join(ROOT, 'app/webroot/css')))
+app.use(express.static(path.join(ROOT, 'app/webroot/js')))
+app.use(express.static(path.join(ROOT, 'app/webroot/views')))
+app.use('/', require('./src/routes/entrypoint'))
 
-router.get('/', (nill, res) => res.sendFile(EPaths.APP + 'index.html'))
+app.keepAliveTimeout = 0
 
-router.all('*', async (req={}, res) => {
-
-    SESSION = req.session;
-    var path = (req.params && req.params[0] ? req.params[0] : '').split('/').filter(e => e);
-
-    if (/robots.*\.txt$/gi.test(path.join('/'))) res.send('1');
-    else if (path[0] == "api") {
-        try {
-            const
-            cls = path[1].slice(0, 1).toUpperCase() + path[1].slice(1)
-            , action = path[2] || 'init'
-            , final = require(EPaths.WEBCONTROLLERS + cls.toLowerCase())
-            , tmp_args = App.blend(req.query, req.body)
-            ;;
-
-            const
-            b64 = tmp_args.encoded ? tmp_args.encoded.replace(/\s+/gi, '+') : ''
-            , u8 = b64 ? atob(b64).toString('utf8') : null
-            // , u8 = b64 ? Buffer.from(b64, 'base64').toString('utf8') : null
-            ;;
-
-            tmp_args.decoded = u8 && u8 != 'undefined' ? JSON.parse(u8) : null;
-            if (!tmp_args.decoded) delete tmp_args.decoded;
-
-            var
-            params = FObject.cast(tmp_args.decoded || tmp_args)
-            , result = final[action](!params.isNull() ? params : null)
-            ;;
-
-            if (result instanceof Promise) result = await result;
-
-            res.send(result)
-
-        } catch (e) {
-
-            err(`/api`, `*`, e.toString())
-            if (VERBOSE>2) console.trace(e);
-            res.send('')
-
-        }
-    } else {
-        path = path.join('/');
-        var found = false;
-        [EPaths.WEBROOT, EPaths.ASSETS, EPaths.VIEWS].forEach(prefix => {
-            if (!found && IO.exists(prefix + path)) {
-                res.sendFile(prefix + path);
-                found = true
-            }
-        });
-        if (!found) res.send('')
-    }
-
-});
-
-app.use(router)
-
+// *---------------------------------------------------*
+// *                 server settings                   *
+// *---------------------------------------------------*
 try {
-    require("http").createServer(app).listen(PORT)
-    pass(`Server`, `init`, `running on port: ${PORT}`);
+    const htserver = require("https").createServer({ key, cert }, app) ;;
+    // const htserver = require("http").createServer(app) ;;
+    require('./src/lib/fsocket')(htserver)
+    htserver.listen(PORT, _ => console.log(
+        ETerminalColors.BG_BLUE
+        + ETerminalColors.FT_WHITE
+        + 'SERVER RUNNING ON PORT ' + htserver.address().port + ' at ' + fdate.as()
+        + ETerminalColors.RESET
+    ))
 } catch (e) {
-    err(`server`, `create`, e.toString())
-    if (VERBOSE>2) console.trace(e)
+    console.error(`error`, `server`, `create`)
+    if(VERBOSE>2) console.trace(e)
 }
