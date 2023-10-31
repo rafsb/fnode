@@ -89,7 +89,7 @@ function lightbox(html, ref="") {
         ).on('click', e => w.disappear(AL, true))
     )
     w.id = uuid
-    $('#app')[0].app(w)
+    $('#app').app(w)
     w.appear()
 }
 

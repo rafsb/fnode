@@ -277,7 +277,7 @@ class FGraph {
     }
 
     constructor(o) {
-        o.target = (o.target || $("#app")[0]).css({ overflow: 'hidden' }).empty()
+        o.target = (o.target || $("#app")).css({ overflow: 'hidden' }).empty()
         o.rects  = o.target.getBoundingClientRect()
         o.css    = binds({ background: app.color("BACKGROUND") }, o.css || {})
         o.type   = o.type || EChartTypes.SMOOTH

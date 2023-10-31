@@ -42,7 +42,7 @@
     )
     ;;
 
-    $('#app')[0].empty().css({ background: "{{midnight_blue}}", color:"{{silver" }).app(
+    $('#app').empty().css({ background: "{{midnight_blue}}", color:"{{silver" }).app(
         TAG('header', 'row relative content-center', { height:'20vh' }).app(
             SPAN('·.·.·L·O·G·I·N·.·.·', 'centered -roboto-thin invert', { fontSize:'3em' })
         )
