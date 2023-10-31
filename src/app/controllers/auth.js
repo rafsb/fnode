@@ -67,11 +67,15 @@ module.exports = class CAuth extends initiator {
         const res  = { status: false } ;;
         if(req.uat) res.status = (await CAuth.check(req)).status
         if(res.status) res.uat = req.uat
-        else {
-            try { 
+        else if(req.payload?.token) {
+            req.uat = req.payload?.token
+            res.status = (await CAuth.check(req)).status
+            if(res.status) res.uat = req.uat
+        } else {
+            try {
                 if(DB_DRIVER == "fstore") {
-                    const u = await user.load(md5(req.payload.user)) ;; 
-                    if(u && hash(''+req.payload?.pswd) === u.pswd) res.uat = (new CAuth).wrap({ userid: u.id, device: req.device, ts: fdate.time() })                    
+                    const u = await user.load(md5(req.payload.user)) ;;
+                    if(u && hash(''+req.payload?.pswd) === u.pswd) res.uat = (new CAuth).wrap({ userid: u.id, device: req.device, ts: fdate.time() })
                 } else {
                     const u = (await user.filter(null, [ [ 'usuario', req.payload.user || "!!USER!!" ], [ 'senha', req.payload.pswd || "!!PSWD!!" ] ])) ;;
                     if(u.status && u.items?.length && u.items[0]) res.uat = (new CAuth).wrap({ userid: u.items[0].id, device: req.device, ts: fdate.time() })
