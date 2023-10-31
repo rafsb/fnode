@@ -33,8 +33,8 @@ DEBUG = false
 , TAG = (n = "div", c, s, t) => fw.new(n, c, s)[typeof t == "object" ? "app" : "html"](t || "")
 , DIV = (c, s, t) => TAG("div", c, s, t)
 , WRAP = (h, c, s) => DIV((c || "") + " wrap", s)[h instanceof Object || h instanceof Array ? 'app' : 'html'](h || "")
-, IMG = (path = "img/icons/cross.svg", cls = "--self-generated", css = {}) => TAG("img", cls, css).attr({ src: path, role: "img" })
-, SVG = (t = "svg", c = "--self-generated", a = { focusable: "false" }, s = {}) => {
+, IMG = (path = "img/icons/cross.svg", cls=null, css = {}) => TAG("img", cls, css).attr({ src: path, role: "img" })
+, SVG = (t="svg", c=null, a={ focusable: "false" }, s={}) => {
     const
     node = document.createElementNS("http://www.w3.org/2000/svg", t)
         .addClass(c)
@@ -272,15 +272,13 @@ blend(Element.prototype, {
         this.dispatchEvent(new Event(eventname))
     }
     , parent: function (pace = 1) {
-        let
-            tmp = this;
-        while (pace--) tmp = tmp.parentElement;
-        return tmp;
+        let tmp = this ;;
+        while (pace-- && tmp) tmp = tmp.parentElement
+        return tmp
     }
     , upFind(tx = null) {
         if (tx) {
-            let
-                x = this;
+            let x = this ;;
             while (x.parentElement.tagName.toLowerCase() != "body" && !(x.parentElement.tagName.toLowerCase() == tx || x.parentElement.has(tx))) x = x.parentElement;
             return x.parentElement
         }
@@ -1380,31 +1378,22 @@ class fw {
         toast = document.createElement("toast")
         , clr = fw.pallete
         ;;
-        toast.addClass("fixed tile content-left --notification").css({
+        toast.addClass("fixed tile content-left _notification").css({
             background: c && c[0] ? c[0] : clr.FOREGROUND
             , color: c && c[1] ? c[1] : clr.FONT
-            , boxShadow: "0 0 .5em " + clr.DARK2
-            , borderRadius: ".25em"
+            , boxShadow: "0 0 .5em " + clr.DARK4
+            , borderRadius: ".5em"
             , padding: "1em"
             , display: 'block'
             , opacity: 0
             , fontWeight: "bolder"
-            , zIndex: 10010
+            , top: 0
+            , right: 0
+            , margin: "1em"
+            , zIndex: 10001
         }).innerHTML = n ? n : "Hello <b>World</b>!!!";
-        if (!fw.is_mobile()) {
-            toast.css({
-                top: 0,
-                right: 0,
-                width: "20vw",
-                margin: ".5em"
-            });
-        } else {
-            toast.css({
-                top: 0,
-                left: 0,
-                width: "100vw"
-            })
-        }
+        if (!fw.is_mobile()) toast.css({ width: "20vw" });
+        else toast.css({ width: "(100vw - 2em)" })
         toast.onclick = function () { clearTimeout(this.dataset.delay); this.disappear(ANIMATION_LENGTH / 2, true); };
         toast.onmouseenter = function () { clearTimeout(this.dataset.delay); };
         toast.onmouseleave = function () {
@@ -1416,7 +1405,7 @@ class fw {
         toast.raise()
 
         let
-        notfys = $("toast.--notification")
+        notfys = $("toast._notification")
         , ht = 0
         ;
         notfys.forEach(x => {
@@ -1443,7 +1432,7 @@ class fw {
     //static hintify(n = null, o = {}, delall = true, keep = false, special = false, evenSpecial = false) {
     static hintify(opts={}) {
 
-        if (opts.delall) $(".--hintifyied" + (opts.special ? ", .--hintifyied-sp" : "")).forEach(x => x.disappear(ANIMATION_LENGTH, true));
+        if (opts.delall) $("._hintifyied" + (opts.special ? ", ._hintifyied-sp" : "")).forEach(x => x.disappear(ANIMATION_LENGTH, true));
 
         opts.css = blend({
             top: Math.min(window.innerHeight * .95, maxis.clientY) + "px"
@@ -1458,13 +1447,13 @@ class fw {
 
         if (opts.text) opts.content = ("<p>" + opts.text + "</p>").morph()
 
-        let toast = TAG("toast", "block fixed --hintifyied" + (opts.special ? "-sp" : ""), opts.css).css({ opacity: 0 }).app(opts.content || SPAN("Toastie!!!")) ;;
-        if (toast.get(".--close").length) toast.get(".--close").on("click", function () { this.upFind("toast").disappear(ANIMATION_LENGTH, true) })
+        let toast = TAG("toast", "block fixed _hintifyied" + (opts.special ? "-sp" : ""), opts.css).css({ opacity: 0 }).app(opts.content || SPAN("Toastie!!!")) ;;
+        if (toast.get(".-close").length) toast.get(".-close").on("click", function () { this.upFind("toast").disappear(ANIMATION_LENGTH, true) })
         else toast.on("click", function () { this.disappear(ANIMATION_LENGTH, true) });
 
         if (!opts.keep) {
             toast.on(EEvents.MOUSELEAVE, function () {
-                $(".--hintifyied" + (opts.special ? ", .--hintifyied-sp" : "")).stop().disappear(ANIMATION_LENGTH, true)
+                $("._hintifyied" + (opts.special ? ", ._hintifyied-sp" : "")).stop().disappear(ANIMATION_LENGTH, true)
             }).on(EEvents.MOUSEENTER, function () {
                 this.stop()
             }).dataset.animationFunction = setTimeout(toast => toast.disappear(ANIMATION_LENGTH, true), ANIMATION_LENGTH * 8, toast)
@@ -1478,30 +1467,30 @@ class fw {
     static window(html, title, css = {}) {
         const
         mob = fw.is_mobile()
-        , head = TAG("header", "relative row zero --window-header no-scrolls").app(
-            DIV("left content-left ellipsis --drag-trigger", { cursor: 'all-scroll', minHeight: "3em", lineHeight: 3, width: "calc(100% - 6em)" }).app(
+        , head = TAG("header", "relative row zero -window-header no-scrolls").app(
+            DIV("left content-left ellipsis -drag-trigger", { cursor: 'all-scroll', minHeight: "3em", lineHeight: 3, width: "calc(100% - 6em)" }).app(
                 typeof title == "string" ? ("<span class='row no-scrolls' style='height:3em;padding:0 1em;opacity:.75'>" + title + "</span>").morph()[0] : title
-            ).on("click", function () { this.upFind("--window").raise() })
+            ).on("click", function () { this.upFind("-window").raise() })
         ).app(
             // CLOSE
-            DIV("right pointer --close tile").app(
+            DIV("right pointer -close tile").app(
                 IMG("assets/img/icons/cross.svg", fw.pallete.type == "dark" ? "invert" : null, { height: "2.75em", width: "2.75em", padding: ".75em" })
             ).on("click", function () {
-                this.upFind("--window").disappear(AL, true)
-                $(".--minimized").each((el, i) => { el.anime({ left: (i * 13.3) + 'vw' }) })
+                this.upFind("-window").disappear(AL, true)
+                $(".-minimized").each((el, i) => { el.anime({ left: (i * 13.3) + 'vw' }) })
             })
         ).app(
             // MINIMIZE
-            mob ? DIV() : DIV("right pointer --minimize tile").app(
+            mob ? DIV() : DIV("right pointer -minimize tile").app(
                 IMG("assets/img/icons/minimize.svg", fw.pallete.type == "dark" ? "invert" : null, { height: "2.75em", width: "2.75em", padding: ".75em" })
             ).on("click", function () {
-                const win = this.upFind("--window") ;;
-                if (win.has("--minimized")) {
+                const win = this.upFind("-window") ;;
+                if (win.has("-minimized")) {
                     const pos = win.position ;;
                     this.anime({ transform: "rotate(0deg)" });
                     win.$(".wrap")[0].style.display = "block";
                     win.anime({ height: pos.h + "px", width: pos.w + "px", top: pos.y + "px", left: pos.x + "px" });
-                    win.remClass("--minimized");
+                    win.remClass("-minimized");
                 } else {
                     win.position = {
                         w: win.offsetWidth
@@ -1512,14 +1501,14 @@ class fw {
                     this.anime({ transform: "rotate(180deg)" });
                     win.$(".wrap")[0].hide();
                     win.anime({ height: "3em", width: "13.3vw", top: "calc(100vh - 3em)", left: 0 });
-                    win.addClass("--minimized");
+                    win.addClass("-minimized");
                 }
-                $(".--minimized").each((el, i) => { el.anime({ left: (i * 13.3) + 'vw' }) })
+                $(".-minimized").each((el, i) => { el.anime({ left: (i * 13.3) + 'vw' }) })
 
             })
         )
         , wrapper = DIV("zero wrap no-scrolls", { height: "calc(100% - 3em)" })
-        , _W = TAG("div", "--window fixed no-scrolls --drag-target blur", blend({
+        , _W = TAG("div", "-window fixed no-scrolls -drag-target blur", blend({
             height: mob ? "100vh" : "70vh"
             , width: mob ? "100vw" : "70vw"
             , top: mob ? 0 : '15vh'
@@ -1535,23 +1524,14 @@ class fw {
         }, css)).data({ state: "default" })
         , uuid = fw.uuid()
         ;;
-
         _W.id = uuid
-
-        if (html) wrapper.app(typeof html == "string" ? html.prepare({uuid}).morph() : html);
-
-        $("#app").app(_W.app(head).app(wrapper).css({ opacity:0 }));
-
-        this.tileEffectClass("tile");
-
-        fw.enableDragging();
-
+        if (html) wrapper.app(typeof html == "string" ? html.prepare({uuid}).morph() : html)
+        $("#app").app(_W.app(head).app(wrapper).css({ opacity:0 }))
         _W.raise()
-
         _W.evalute()
-
         _W.appear(AL, true)
-
+        fw.tileEffectClass("tile");
+        fw.enableDragging();
         return _W
 
     }
@@ -1567,7 +1547,7 @@ class fw {
             , color: fw.pallete.FONT
         }, css))
         ;;
-        w.$('.--minimize').remove()
+        w.$('.-minimize').remove()
         return w
     }
 
@@ -1726,13 +1706,13 @@ class fw {
 
     static enableDragging() {
 
-        $(".--drag-trigger, .--drag").each((x, i) => {
+        $(".-drag-trigger, .-drag").each((x, i) => {
 
-            if (x.has(".--drag-enabled")) return;
+            if (x.has(".-drag-enabled")) return;
 
             var ax = 0, ay = 0, bx = 0, by = 0;
             const
-            tgt = x.has("--drag") ? x : x.upFind("--drag-target")
+            tgt = x.has("-drag") ? x : x.upFind("-drag-target")
             , dragselect = e => {
                 e.preventDefault();
                 bx = e.clientX;
@@ -1761,7 +1741,7 @@ class fw {
 
             x.attr({ draggable: "true" }).onmousedown = dragselect;
 
-            x.addClass("--drag-enabled");
+            x.addClass("-drag-enabled");
         })
     }
 

@@ -69,7 +69,7 @@ blend(fw.hints, {
 
 history.pushState({}, "stay", "/");
 window.onpopstate = e => {
-    $('main.view, .--window').last()?.remove()
+    $('main.view, .-window').last()?.remove()
     history.pushState({}, "stay", "/");
 }
 document.onkeyup = e => {
@@ -81,7 +81,7 @@ document.onkeyup = e => {
 function lightbox(html, ref="") {
     const uuid = fw.uuid() ;;
     if(typeof html == 'string') html = html.prepare({ uuid }).morph()
-    const w = TAG('main', 'fixed zero view -ft-lightbox', { height:'calc(100vh - 3em)', top:'3em', background: fw.pallete.BACKGROUND, opacity:0 }) ;;
+    const w = TAG('main', 'fixed zero view -lightbox', { height:'calc(100vh - 3em)', top:'3em', background: fw.pallete.BACKGROUND, opacity:0 }) ;;
     w.html(html)
     w.app(
         DIV('absolute zero-topright pointer', { height:'3em', width:'3em', margin:'0 .25em' }).app(
