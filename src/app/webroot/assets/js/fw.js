@@ -165,7 +165,7 @@ blend(Element.prototype, {
             el.style.transition = "all " + len.toFixed(2) + "s " + trans;
             el.style.transitionDelay = (delay ? delay / 1000 : 0).toFixed(2) + "s";
             for (let i in obj) el.style[i] = obj[i];
-            setTimeout(function (e) { return ok(e) }, len * 1000 + delay, el)
+            setTimeout(_ => ok(el), len * 1000 + delay)
         })
     }
     , mime: function () {
@@ -1105,17 +1105,6 @@ class Loader {
 
 };
 
-class CallResponse {
-    constructor(url = location.href, args = {}, method = "POST", header = {}, data = null) {
-        this.url = url;
-        this.args = args;
-        this.method = method;
-        this.headers = header;
-        this.data = data;
-        this.status = this.data ? true : false;
-    }
-};
-
 class fobject extends Object {
 
     static cast(o){
@@ -1290,7 +1279,7 @@ class fw {
             } : { method, headers: new Headers(head) })
             , res = await req.text()
             ;;
-            return new CallResponse(url, args, method, req, res);
+            return { url, args, method, req, res };
     } catch(e) {
             console.log({ err: e, url, args, head })
         }
@@ -1302,9 +1291,9 @@ class fw {
 
     static async load(url, args = null, target = null, bind = null) {
         return fw.call(url, args).then(r => {
-            if (!r.status) return fw.error("error loading " + url);
-            r = r.data.prepare(bind).morph()
-            if (!target) target = document.getElementsByTagName('body')[0]
+            if (!r?.res) return fw.error("error loading " + url);
+            r = r.res.prepare(bind).morph()
+            if (!target) target = fw.$('body').at()
             function insert(h) {
                 if(h instanceof HTMLCollection) Array.from(h).forEach(insert)
                 else {
@@ -1318,12 +1307,14 @@ class fw {
     }
 
     static async exec(url, args = null, prepare = null) {
+        const hash = `f${url.hash()}` ;;
         if(!fw.execs) fw.execs = {}
-        else if(fw.execs[url]) return eval(fw.execs[url].prepare(prepare))(fw, args)
-        const res = await this.call(`js/${url.indexOf('.js')+1 ? url : url+'.js'}`) ;;
-        if(!res.status) return this.error("error loading " + url)
-        fw.execs[url] = res.data
-        return eval(fw.execs[url].prepare(prepare))(fw, args)
+        if(!fw.execs[hash]) {
+            const res = (await this.call(`js/${url.indexOf('.js')+1 ? url : url+'.js'}`)).res ;;
+            if(!res) return this.error("error loading " + url)
+            fw.execs[hash] = res
+        }
+        try { return eval(fw.execs[hash].prepare(prepare))(fw, args) } catch(e) { return fw.error(e.toString()) }
     }
 
     static uuid(pre='f') {
@@ -1356,7 +1347,7 @@ class fw {
         $('toast').remove();
         $('tooltip').hide();
 
-        const loading_list = $(".-loading", (target || $("#app")[0])) ;;
+        const loading_list = $(".-loading", (target || $("#app"))) ;;
 
         if (show && loading_list.length) {
             $(".-pulse", loading_list[0])[0].html(txt);
@@ -1372,12 +1363,12 @@ class fw {
                 fontSize: "4em"
                 , color: "#0004"
             }, "i")), "absolute zero -loading", {
-                background: fw.color('BACKGROUND')
+                background: fw.pallete.BACKGROUND
                 , opacity: .8
                 , zIndex: 10000
             })
             ;;
-            (target || $("#app")[0]).app(load);
+            (target || $("#app")).app(load);
             load.anime({ transform: 'scale(1)', filter: 'opacity(1)' })
             return load
         }
@@ -1420,7 +1411,7 @@ class fw {
             this.dataset.delay = setTimeout(t => { t.disappear(ANIMATION_LENGTH / 2, true); }, ANIMATION_LENGTH, this);
         };
         document.getElementsByTagName('body')[0].appendChild(toast);
-        this.tileClickEffectSelector(".tile");
+        this.tileEffectClass("tile");
 
         toast.raise()
 
@@ -1457,11 +1448,11 @@ class fw {
         opts.css = blend({
             top: Math.min(window.innerHeight * .95, maxis.clientY) + "px"
             , left: Math.min(window.innerWidth * .8, maxis.clientX) + "px"
-            , boxShadow: "0 0 2em " + fw.color("DARK4")
+            , boxShadow: "0 0 2em " + fw.pallete.DARK4
             , padding:".5em"
             , borderRadius: ".25em"
-            , background: fw.color("BACKGROUND")
-            , color: fw.color("FONT")
+            , background: fw.pallete.BACKGROUND
+            , color: fw.pallete.FONT
             , zIndex: 9000
         }, opts.css);
 
@@ -1537,7 +1528,7 @@ class fw {
             , border: "1px solid " + fw.pallete.FONT + "22"
             , borderRadius: ".5em"
             , boxShadow: "0 0 1em " + fw.pallete.FONT + "88"
-            , color: fw.color("FONT")
+            , color: fw.pallete.FONT
             , zIndex: 8000
             , resize: mob ? "none" : "both"
             , padding: "0"
@@ -1549,9 +1540,9 @@ class fw {
 
         if (html) wrapper.app(typeof html == "string" ? html.prepare({uuid}).morph() : html);
 
-        $("#app")[0].app(_W.app(head).app(wrapper).css({ opacity:0 }));
+        $("#app").app(_W.app(head).app(wrapper).css({ opacity:0 }));
 
-        this.tileClickEffectSelector(".tile");
+        this.tileEffectClass("tile");
 
         fw.enableDragging();
 
@@ -1766,7 +1757,7 @@ class fw {
             }
             ;;
 
-            if (tgt == $('#app')[0]) return;
+            if (tgt == $('#app')) return;
 
             x.attr({ draggable: "true" }).onmousedown = dragselect;
 
@@ -1774,70 +1765,70 @@ class fw {
         })
     }
 
-    static tileClickEffectSelector(cls = null, clr = null) {
-        if (!cls) return;
-        $(cls).each((x, i) => {
-            if (!x.has("--effect-selector-attached")) {
-                x.addClass("no-scrolls").on("click", function (e) {
-                    if (this.classList.contains("-skip")) return;
-                    let
-                        bounds = this.getBoundingClientRect()
-                        , size = Math.max(bounds.width, bounds.height);
-                    this.app(TAG("span", "absolute", {
-                        background: clr || (fw.pallete.FONT + "66")
-                        , display: "inline-block"
-                        , borderRadius: "50%"
-                        , width: size + "px"
-                        , height: size + "px"
-                        , opacity: .4
-                        , top: e.layerY + "px"
-                        , left: e.layerX + "px"
-                        , transformOrigin: "center center"
-                        , transform: "translate(-50%, -50%) scale(0)"
-                    }, x => x.anime({ transform: "translate(-50%, -50%) scale(1.5" }, ANIMATION_LENGTH / 2).then(x => x.disappear(ANIMATION_LENGTH / 4, true))))
-                }).addClass("--effect-selector-attached")
-            }
-        })
+    static async delay(ms=1000) {
+        return new Promise(res => setTimeout(res, ms));
     }
-
     static tooltips() {
         var ttip = $('tooltip#tooltip')[0];
         if (!ttip) {
-            ttip = TAG("tooltip#tooltip", "fixed --tooltip-element", {
+            ttip = TAG("tooltip#tooltip", "fixed _tooltip-element", {
                 padding: ".5em"
                 , borderRadius: ".25em"
-                , border: "1px solid " + fw.color('FONT') + '44'
-                , background: fw.color("BACKGROUND")
-                , color: fw.color("FONT")
+                , border: "1px solid " + fw.pallete.FONT + '44'
+                , background: fw.pallete.BACKGROUND
+                , color: fw.pallete.FONT
                 , display: "none"
                 , zIndex: 9999
             })
-            $("#app")[0].app(ttip)
-            ttip.on("mouseleave", function(){ this.hide() })
+            $("#app").app(ttip)
+            ttip.on("mouseleave", e => e.target.hide())
         }
-        $(".--tooltip").forEach(tip => tip.on('mouseenter', e => {
+        $(".-tooltip").forEach(tip => tip.on('mouseenter', e => {
                 if(!e.target.dataset.tip) return;
                 ttip.css({
-                    background: e.target.dataset.tipbg || fw.color("BACKGROUND")
-                    , color: e.target.dataset.tipft || fw.color("FONT")
+                    background: e.target.dataset.tipbg || fw.pallete.BACKGROUND
+                    , color: e.target.dataset.tipft || fw.pallete.FONT
                     , width: e.target.dataset.tipwidth||'auto'
                 }).html(e.target.dataset.tip == "@" ? e.target.textContent : e.target.dataset.tip).show()
             }).on('mousemove', e => {
                 ttip.style.top = (24 + e.clientY) + "px";
                 ttip.style.left = (24 + e.clientX) + "px";
                 ttip.style.transform = (e.clientX > window.innerWidth * .85) ? 'translateX(calc(-100% + -48px))' : 'translateX(0)';
-            }).on('mouseleave', e => ttip.hide()).removeClass("--tooltip")
+            }).on('mouseleave', e => ttip.hide()).removeClass("-tooltip")
         )
     }
-
-    static async delay(ms=1000) {
-        return new Promise(res => setTimeout(res, ms));
+    static tileEffectClass(cls = null, clr = null) {
+        if (!cls) return;
+        $(`.${cls}`).forEach(x => {
+            if (!x.has("_effect-selector-attached")&&!x.has("-skip")) {
+                x.addClass("relative _effect-selector-attached").on("click", async e => {
+                    const
+                    bounds = e.target.getBoundingClientRect()
+                    , size = Math.max(bounds.width, bounds.height)
+                    , bubble = DIV("absolute block circle _bubble", {
+                        background: clr || (fw.pallete.FONT + "44")
+                        , width: size + "px"
+                        , height: size + "px"
+                        , top: e.layerY + "px"
+                        , left: e.layerX + "px"
+                        , transformOrigin: "center center"
+                        , transform: "translate(-50%, -50%) scale(.1)"
+                    })
+                    , wrap = DIV(`absolute wrap zero`).app(
+                        DIV(`relative left wrap zero no-scrolls`).app(bubble)
+                    )
+                    ;;
+                    e.target.app(wrap)
+                    await fw.sleep(10)
+                    await bubble.stop().anime({ transform: "translate(-50%, -50%) scale(1.75)", filter:`opacity(0)` }, ANIMATION_LENGTH)
+                    wrap.remove()
+                })
+            }
+        })
     }
-
-
     static $(wrapper = null, context = document) {
         const t = [].slice.call(context.querySelectorAll(wrapper));
-        // return wrapper && wrapper[0] == '#' ? t[0] : t
+        if(t[0] && t[0].id && t[0].id == wrapper.split(`#`)[1]) return t[0]
         return t
     }
 
@@ -1848,26 +1839,30 @@ $ = fw.$
 const
 maxis = { x: 0, y: 0 }
 , initpool = new Pool()
-// , $ = fw.$
 , bootloader = new Loader()
 , App = fw
-, include = (path, args) => {
-    if($('#scr-'+path.hash()).length) return
-    const s = document.createElement('script') ;;
-    s.id = `scr-${path.hash()}`
-    s.type = 'text/javascript'
-    s.src = path.indexOf(".js") + 1 ? path : path + '.js'
-    s.args = args || {}
-    document.getElementsByTagName('head')[0].appendChild(s)
-}
-, GET = async (url, callback, args, head) => {
-    var res = await fw.call(url + (args ? `?${new URLSearchParams(args).toString()}` : ''), null, 'GET', head) ;;
-    try { res = JSON.parse(res.data) } catch(e) { res = res.data }
+, GET = get = async (url, args) => {
+    let callback, data, head ;;
+    if(typeof args == `function`) callback = args
+    else {
+        callback = args?.callback || args?.cb || null
+        data = args?.data || args?.payload || null
+        head = args?.head || args?.headers || null
+    }
+    let res = await fw.call(url + (data ? `?${new URLSearchParams(data).toString()}` : ''), null, 'GET', head) ;;
+    try { res = JSON.parse(res.res) } catch(e) { res = res.res }
     return callback ? callback(res) : res
 }
-, POST = async (url, args, callback, head) => {
-    var res = await fw.call(url, args, 'POST', head) ;;
-    try { res = JSON.parse(res.data) } catch(e) { res = res.data }
+, POST = post = async (url, args) => {
+    let callback, data, head ;;
+    if(typeof args == `function`) callback = args
+    else {
+        callback = args?.callback || args?.cb || null
+        data = args?.data || args?.payload || null
+        head = args?.head || args?.headers || null
+    }
+    let res = await fw.call(url, data, 'POST', head) ;;
+    try { res = JSON.parse(res.res) } catch(e) { res = res.res }
     return callback ? callback(res) : res
 }
 ;;
@@ -1900,5 +1895,16 @@ window.oncontextmenu = e => {
 }
 
 document.addEventListener("touchstart", function() {}, true);
+
+// LIBS
+function include(path, args) {
+    if($('#scr-'+path.hash()).length) return
+    const s = document.createElement('script') ;;
+    s.id = `scr-${path.hash()}`
+    s.type = 'text/javascript'
+    s.src = path.indexOf(".js") + 1 ? path : path + '.js'
+    s.args = args || {}
+    document.getElementsByTagName('head')[0].appendChild(s)
+}
 
 console.log(`  ____ _     ___   __  __  ___  ____  _____\n / ___| |   |_ _| |  \\/  |/ _ \\|  _ \\| ____|\n| |   | |    | |  | |\\/| | | | | | | |  _|\n| |___| |___ | |  | |  | | |_| | |_| | |___\n \\____|_____|___| |_|  |_|\\___/|____/|_____|\n\n`);
