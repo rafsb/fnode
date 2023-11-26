@@ -33,7 +33,7 @@ DEBUG = false
 , TAG = (n = "div", c, s, t) => fw.new(n, c, s)[typeof t == "object" ? "app" : "html"](t || "")
 , DIV = (c, s, t) => TAG("div", c, s, t)
 , WRAP = (h, c, s) => DIV((c || "") + " wrap", s)[h instanceof Object || h instanceof Array ? 'app' : 'html'](h || "")
-, IMG = (path = "img/icons/cross.svg", cls=null, css = {}) => TAG("img", cls, css).attr({ src: path, role: "img" })
+, IMG = (path = "img/spin.svg", cls=null, css = {}) => TAG("img", cls, css).attr({ src: path, role: "img" })
 , SVG = (t="svg", c=null, a={ focusable: "false" }, s={}) => {
     const
     node = document.createElementNS("http://www.w3.org/2000/svg", t)
@@ -128,14 +128,16 @@ blend(HTMLFormElement.prototype, {
     json: function () {
         const me = this, tmp = {} ;;
         me.$("input, textarea, select, .-value, .-field").forEach(o => {
+            if(o.has(`-skip`)) return
             if (o.upFind("form") == me && (o.name || o.dataset.name)) {
+                if(o.getAttribute(`type`) == `checkbox` && !o.checked) return
                 let
                 name = o.name || o.dataset.name
-                , value = o.value || o.dataset.value || o.textContent
+                , value = o.value || o.dataset.value || o.textContent || o.checked
                 ;;
-                if (o.has("-list")) value = value.split(/\s+/gi).filter(i=> i=='' || i==null || i==undefined || isNaN(i) ? i : i*1)
-                if (o.has("-hash")) value = Array.isArray(value) ? value.map(x => { return x.hash() }) : value.hash()
-                value = (value=='' || value==null || value==undefined || isNaN(value)) ? value : value * 1
+                if (o.has("-list")) value = value.split(/\n+/gi).filter(i=> i=='' || i==null || i==undefined || isNaN(i) ? i : i*1)
+                if (o.has("-hash")) value = Array.isArray(value) ? value.map(x => { return (x||``).hash() }) : (value||``).hash()
+                value = (value=='' || value==null || value==undefined || typeof value == `boolean` || isNaN(value)) ? value : value * 1
                 if(undefined !== tmp[name]) {
                     if(!Array.isArray(tmp[name])) {
                         const t = tmp[name] ;;
@@ -152,6 +154,25 @@ blend(HTMLFormElement.prototype, {
     }
     , stringify: function () {
         return JSON.stringify(this.json())
+    }
+    , up: function(url, cb){
+        const
+        data = new FormData(this)
+        , xhr = new XMLHttpRequest()
+        ;;
+        if(url) {
+            xhr.open("POST", url)
+            xhr.send(data)
+            if(cb) {
+                xhr.onreadystatechange = function() {
+                    if(xhr.readyState == 4 && xhr.status == 200) {
+                        let res ;;
+                        try { res = JSON.parse(xhr.responseText) } catch(e) { res = xhr.responseText}
+                        cb(res)
+                    }
+                }
+            }
+        } else fw.error(`Endpoint not specified...`)
     }
 });
 
@@ -398,9 +419,10 @@ blend(String.prototype, {
     }
     , sanitized_compare: function (word) {
         const w = this ;;
-        return (new RegExp(
-            w
-                .trim()
+        if(!w || !word) return false
+        try {
+            return Boolean((new RegExp(
+                w.trim()
                 .replace(/\s+/giu, ' ')
                 .replace(/(a|á|à|ã)/giu, "(a|á|à|ã)")
                 .replace(/(e|é|ê)/giu,   "(e|é|ê)")
@@ -408,7 +430,10 @@ blend(String.prototype, {
                 .replace(/(o|ó|ô|õ)/giu, "(o|ó|ô|õ)")
                 .replace(/(u|ú)/giu,     "(u|ú)")
                 .replace(/(c|ç)/giu,     "(c|ç)")
-            , 'giu')).test(word.trim().replace(/\s+/gi, ' ')) ? true : false
+            , 'giu')).test(word.trim().replace(/\s+/gi, ' ')))
+        } catch(e) {
+            return false
+        }
     }
     , btoa: function () {
         return btoa(this);
@@ -462,7 +487,7 @@ blend(String.prototype, {
     }
     , prepare: function (obj = null) {
         let str = this.trim()+'' ;;
-        obj = blend({ uuid: fw.uuid() }, fw.pallete, obj)
+        obj = blend({ uuid: fw.uuid() }, fw.pallete, fw.components?.translatedict, obj)
         const founds = str.match(/{{([^{}]+)}}/gi)?.map(i => i.replace(/{|}/g, '')) || [] ;;
         founds.forEach(x => {
             let rgx = new RegExp("{{" + x.trim() + "}}", "gi") ;;
@@ -478,12 +503,7 @@ blend(Array.prototype, {
     , each: function (fn) { if (fn && typeof fn == 'function') { for (let i = 0; i++ < this.length;) fn(this[i - 1], i - 1); } return this }
     , extract: function (fn = null) {
         if (!fn || !this.length) return this;
-        let narr = [];
-        this.each((o, i) => {
-            let x = fn(o, i);
-            if (x != null && x != undefined) narr.push(x)
-        })
-        return narr
+        return  this.map((o, i) => fn(o, i)).filter(i=>i)
     }
     , merge: function () {
         return [].concat.apply([], this)
@@ -508,86 +528,117 @@ blend(Array.prototype, {
         narr.push(this.last())
         return narr
     }
-    , tiny: function (n = 10) {
-        if (this.length <= n) return this;
+    , tiny(n=10){
         let
-            arr = this.calc(SMOOTH, Math.floor(this.length / (n - 1)))
-            , narr = [this.first()]
-            , x = this.length / (n - 1)
-            , i = Math.floor(x)
-            ;
-        while (i > 0 && i < this.length - 1) {
-            narr.push(this[i] || null);
-            i += Math.floor(x);
+        narr=[ this.first() ]
+        , x = this.length / (n-1)
+        , i = x
+        ;
+        while(i<this.length){
+            narr.push(this.interpolate(i))
+            i+=x
         }
         narr.push(this.last())
         return narr
     }
-    , calc: function (type = SUM, helper = null) {
-        let res = 0 ;;
-        switch (type) {
-            case (SUM): this.forEach(x => res += x); break
-            case (AVERAGE): this.forEach(x => res += x); res = res / this.length; break
-            case (HARMONIC): this.forEach(x => res += 1 / x); res = this.length / res; break
-            case (TREND): {
-                let m, b, x, y, x2, xy, z, np = this.length ;;
-                m = b = x = y = x2 = xy = z = 0*0;
-                if (!helper) helper = np;
-                this.forEach((n, i) => {
-                    x = x + i;
-                    y = y + n;
-                    xy = xy + i * n;
-                    x2 = x2 + i * i;
-                });
-                z = np * x2 - x * x
-                if (z) {
-                    m = (np * xy - x * y) / z;
-                    b = (y * x2 - x * xy) / z;
-                }
-                res = m * helper + b
-            } break
-            case (INTERPOLATE): {
-                if (helper == null || helper == undefined) {
-                    fw.error("Ops! a 'x' value is needed for array basic interpolation...")
-                    return 0
-                }
-                res = this.linearInterpolation(helper)
-            } break;
-            case (PROGRESS): {
-                let me = this ;;
-                res = this.extract((x, i) => { return i ? me[i] / me[i - 1] : 1 }).calc(AVERAGE)
-            } break;
-            case (MAX): {
-                if (!this.length) return 0;
-                res = Math.max(...this)
-            } break;
-            case (MIN): {
-                if (!this.length) return 0;
-                res = Math.min(...this)
-            } break;
-            case (RELATIFY): {
-                res = this.calc(MAX);
-                res = this.map(x => x / res)
-            } break;
-            case (SIMILARITY): {
-                if (helper == null || helper == undefined) {
-                    fw.error("Ops! a 'y' array is needed for Pearson similarity algorythm to work...")
-                    return 0
-                }
-                res = this.pearsonSimilarity(helper);
-            } break;
-            case (SMOOTH): {
-                const
-                narr = []
-                , arr = this
-                , len = this.length
-                , xx = Math.max(1, Math.floor(helper / 2))
-                ;;
-                this.forEach((x, i) => narr.push(fw.iterate(Math.max(0, i - xx), Math.min(len, i + xx)).extract(x => arr[x]).calc(AVERAGE)))
-                return narr
-            } break;
+    , sum() {
+        return this.reduce((p, q) => p + q, 0)
+    }
+    , average() {
+        return this.sum() / this.length
+    }
+    , harmony() {
+        return this.length/this.reduce((p, q) => p+=1/q, 0)
+    }
+    , trend(target) {
+        let m, b, x, y, x2, xy, z, np = this.length ;;
+        m = b = x = y = x2 = xy = z = 0
+        target = target || np
+        this.each((n, i) => {
+            x = x + i
+            y = y + n
+            xy = xy + i * n
+            x2 = x2 + i * i
+        })
+        z = np*x2 - x*x
+        if(z){
+            m = (np*xy - x*y)/z;
+            b = (y*x2 - x*xy)/z;
         }
-        return res;
+        return m * target + b
+    }
+    , progress() {
+        const me = this ;;
+        return this.map((x, i) => i ? x/me[i-1] : 1)
+    }
+    , max() {
+        return Math.max(... this)
+    }
+    , min() {
+        return Math.min(... this)
+    }
+    , relatify() {
+        const max = this.max() ;;
+        return this.map(i => i/max)
+    }
+    , linear_interpolation(z) {
+        if(!z) return this[0] || null
+        // if(this[z]) return this[z]
+        let x0=0, x1=Number.MAX_SAFE_INTEGER ;;
+        for (let i = 0; i < this.length; i++) {
+            if (this[i] !== null && this[i] !== undefined) {
+                if(i<z) x0 = Math.max(x0, i)
+                if(i>z) x1 = Math.min(x1, i)
+            }
+        }
+        let y0 = this[x0]||0, y1 = this[x1]||0 ;;
+        return y0 + (y1 - y0) * ((z - x0) / (x1 - x0))
+    }
+    , lagrange_interpolation(z) {
+        // if(this[z]) return this[z]
+        const x=[], y=[] ;;
+        for (let i = 0; i < this.length; i++) {
+            if (this[i] !== null && this[i] !== undefined) {
+                x.push(i)
+                y.push(this[i])
+            }
+        }
+        let n = x.length, sum = 0 ;;
+        for (let i = 0; i < n; i++) {
+            let term = y[i] ;;
+            for (var j = 0; j < n; j++) if(j!==i) term = term * (z - x[j]) / (x[i] - x[j])
+            sum += term
+        }
+        return sum
+    }
+    , fillNulls(interpolation=`linear`) {
+        const nulls = this.map((x, i) => x === null ? i : null).filter(i=>i) ;;
+        for(let i=0;i<nulls.length;i++) this[nulls[i]] = this[`${interpolation}Interpolation`](nulls[i])
+        return this
+    }
+    , last(n=null) {
+        if (!this.length) return null
+        if (n === null) return this[this.length - 1]
+        return farray.cast(this.slice(Math.max(this.length - n, 0)))
+    }
+    , first(n=null) {
+        if (!this.length) return null;
+        if (n === null) return this[0];
+        return farray.cast(this.slice(0, n))
+    }
+    , at(n=0) {
+        if(n >= 0) return this[n]
+        return this.length > n*-1 ? this[this.length+n] : null
+    }
+    , rand(){
+        return this[Math.floor(Math.random()*this.length)]
+    }
+    , not(el) {
+        while(this.indexOf(el)+1) this.splice(this.indexOf(el), 1)
+        return this;
+    }
+    , empty(){
+        return new farray(this.length)
     }
     , pearsonSimilarity(y) {
         const
@@ -609,7 +660,7 @@ blend(Array.prototype, {
         if (diff === 0) return 0
         return num / diff
     }
-    , linearInterpolation(z) {
+    , linearInterpolation2(z) {
         if(!z) return this[0] || 0
         let x0=0, x1=Number.MAX_SAFE_INTEGER ;;
         for (let i = 0; i < this.length; i++) {
@@ -621,7 +672,7 @@ blend(Array.prototype, {
         let y0 = this[x0]||0, y1 = this[x1]||0 ;;
         return y0 + (y1 - y0) * ((z - x0) / (x1 - x0))
     }
-    , lagrangeInterpolation(z) {
+    , lagrangeInterpolation2(z) {
         const x=[], y=[] ;;
         for (let i = 0; i < this.length; i++) {
             if (this[i] !== null && this[i] !== undefined) {
@@ -636,45 +687,6 @@ blend(Array.prototype, {
             sum += term
         }
         return sum
-    }
-    , fillNulls: function () {
-        let
-            final
-            , nulls = []
-            , narr = this.extract((el, i) => {
-                let
-                    y = Array.isArray(el) ? el[1] : el
-                    , x = Array.isArray(el) ? el[0] : i
-                    ;;
-                if (y == null || y == undefined) nulls.push(x);
-                else return [x, y];
-            })
-        nulls.each((x, n) => narr.push([n, narr.calc(INTERPOLATE, n)]));
-        narr.sort(function (a, b) { return a[0] - b[0] })
-        return narr;
-    }
-    , last: function (n = null) {
-        if (!this.length) return null;
-        if (n === null) return this[this.length - 1];
-        return this.slice(Math.max(this.length - n, 0));
-    }
-    , first: function (n = null) {
-        if (!this.length) return null;
-        if (n === null) return this[0];
-        return this.slice(0, n);
-    }
-    , at: function (n = 0) {
-        if (n >= 0) return this.length >= n ? this[n] : null;
-        return this.length > n * -1 ? this[this.length + n] : null
-    }
-    , rand: function () {
-        return this[Math.floor(Math.random() * this.length)]
-    }
-    , not: function (el) {
-        let
-            arr = this;
-        while (arr.indexOf(el) + 1) arr.splice(arr.indexOf(el), 1);
-        return arr;
     }
     , anime: function (obj, len = ANIMATION_LENGTH, delay = 0, trans = null) {
         this.each(x => x.anime(obj, len, delay, trans));
@@ -725,10 +737,6 @@ blend(Array.prototype, {
     }
     , on: function (act = null, fn = null) {
         if (act && fn) this.each(x => x.on(act, fn));
-        return this
-    }
-    , empty: function () {
-        this.each(x => x.empty())
         return this
     }
     , clear: function () {
@@ -1312,7 +1320,10 @@ class fw {
             if(!res) return this.error("error loading " + url)
             fw.execs[hash] = res
         }
-        try { return eval(fw.execs[hash].prepare(prepare))(fw, args) } catch(e) { return fw.error(e.toString()) }
+        let res;
+        try { res = await eval(fw.execs[hash].prepare(prepare))(fw, args) } catch(e) { console.trace(e) }
+        return { res, hash }
+
     }
 
     static uuid(pre='f') {
@@ -1342,10 +1353,9 @@ class fw {
      * @Override
      */
     static loading(show = true, target, txt = '<img src="assets/img/spin.svg" style="transform:scale(.25)"/>') {
-        $('toast').remove();
-        $('tooltip').hide();
+        $('tooltip, toast').hide();
 
-        const loading_list = $(".-loading", (target || $("#app"))) ;;
+        const loading_list = (target || $("#app")[0]).$(".-loading") ;;
 
         if (show && loading_list.length) {
             $(".-pulse", loading_list[0])[0].html(txt);
@@ -1381,8 +1391,8 @@ class fw {
         toast.addClass("fixed tile content-left _notification").css({
             background: c && c[0] ? c[0] : clr.FOREGROUND
             , color: c && c[1] ? c[1] : clr.FONT
-            , boxShadow: "0 0 .5em " + clr.DARK4
-            , borderRadius: ".5em"
+            , boxShadow: "0 0 .25em " + clr.DARK4
+            , borderRadius: ".25em"
             , padding: "1em"
             , display: 'block'
             , opacity: 0
@@ -1400,7 +1410,7 @@ class fw {
             this.dataset.delay = setTimeout(t => { t.disappear(ANIMATION_LENGTH / 2, true); }, ANIMATION_LENGTH, this);
         };
         document.getElementsByTagName('body')[0].appendChild(toast);
-        this.tileEffectClass("tile");
+        tileEffect(".tile");
 
         toast.raise()
 
@@ -1429,41 +1439,6 @@ class fw {
         return fw.notify(message || "Hooray! Success!", [fw.pallete.PETER_RIVER, fw.pallete.WHITE])
     }
 
-    //static hintify(n = null, o = {}, delall = true, keep = false, special = false, evenSpecial = false) {
-    static hintify(opts={}) {
-
-        if (opts.delall) $("._hintifyied" + (opts.special ? ", ._hintifyied-sp" : "")).forEach(x => x.disappear(ANIMATION_LENGTH, true));
-
-        opts.css = blend({
-            top: Math.min(window.innerHeight * .95, maxis.clientY) + "px"
-            , left: Math.min(window.innerWidth * .8, maxis.clientX) + "px"
-            , boxShadow: "0 0 2em " + fw.pallete.DARK4
-            , padding:".5em"
-            , borderRadius: ".25em"
-            , background: fw.pallete.BACKGROUND
-            , color: fw.pallete.FONT
-            , zIndex: 9000
-        }, opts.css);
-
-        if (opts.text) opts.content = ("<p>" + opts.text + "</p>").morph()
-
-        let toast = TAG("toast", "block fixed _hintifyied" + (opts.special ? "-sp" : ""), opts.css).css({ opacity: 0 }).app(opts.content || SPAN("Toastie!!!")) ;;
-        if (toast.get(".-close").length) toast.get(".-close").on("click", function () { this.upFind("toast").disappear(ANIMATION_LENGTH, true) })
-        else toast.on("click", function () { this.disappear(ANIMATION_LENGTH, true) });
-
-        if (!opts.keep) {
-            toast.on(EEvents.MOUSELEAVE, function () {
-                $("._hintifyied" + (opts.special ? ", ._hintifyied-sp" : "")).stop().disappear(ANIMATION_LENGTH, true)
-            }).on(EEvents.MOUSEENTER, function () {
-                this.stop()
-            }).dataset.animationFunction = setTimeout(toast => toast.disappear(ANIMATION_LENGTH, true), ANIMATION_LENGTH * 8, toast)
-        }
-
-        $('body')[0].app(toast.appear())
-
-        return toast
-    }
-
     static window(html, title, css = {}) {
         const
         mob = fw.is_mobile()
@@ -1473,16 +1448,16 @@ class fw {
             ).on("click", function () { this.upFind("-window").raise() })
         ).app(
             // CLOSE
-            DIV("right pointer -close tile").app(
-                IMG("assets/img/icons/cross.svg", fw.pallete.type == "dark" ? "invert" : null, { height: "2.75em", width: "2.75em", padding: ".75em" })
+            DIV("relative right pointer -close tile", { height: `3em`, width: `3em` }).app(
+                SPAN(`close`, `icon centered`, { fontSize: `1.5em` })
             ).on("click", function () {
                 this.upFind("-window").disappear(AL, true)
                 $(".-minimized").each((el, i) => { el.anime({ left: (i * 13.3) + 'vw' }) })
             })
         ).app(
             // MINIMIZE
-            mob ? DIV() : DIV("right pointer -minimize tile").app(
-                IMG("assets/img/icons/minimize.svg", fw.pallete.type == "dark" ? "invert" : null, { height: "2.75em", width: "2.75em", padding: ".75em" })
+            mob ? DIV() : DIV("relative right pointer -minimize tile", { height:`3em`, width: `3em` }).app(
+                SPAN(`minimize`, `icon centered`, { fontSize: `1.5em` })
             ).on("click", function () {
                 const win = this.upFind("-window") ;;
                 if (win.has("-minimized")) {
@@ -1530,8 +1505,8 @@ class fw {
         _W.raise()
         _W.evalute()
         _W.appear(AL, true)
-        fw.tileEffectClass("tile");
-        fw.enableDragging();
+        tileEffect(".tile");
+        enableDragging();
         return _W
 
     }
@@ -1704,121 +1679,24 @@ class fw {
         document.body.removeChild(el);
     }
 
-    static enableDragging() {
-
-        $(".-drag-trigger, .-drag").each((x, i) => {
-
-            if (x.has(".-drag-enabled")) return;
-
-            var ax = 0, ay = 0, bx = 0, by = 0;
-            const
-            tgt = x.has("-drag") ? x : x.upFind("-drag-target")
-            , dragselect = e => {
-                e.preventDefault();
-                bx = e.clientX;
-                by = e.clientY;
-                document.onmouseup = dragend;
-                document.onmousemove = dragstart;
-            }
-            , dragstart = e => {
-                e.preventDefault();
-                tgt.style.transition = 'none';
-                tgt.style.transitionDelay = "0s";
-                ax = bx - e.clientX;
-                ay = by - e.clientY;
-                bx = e.clientX;
-                by = e.clientY;
-                tgt.style.top = (tgt.offsetTop - ay) + "px";
-                tgt.style.left = (tgt.offsetLeft - ax) + "px";
-            }
-            , dragend = e => {
-                document.onmouseup = null;
-                document.onmousemove = null;
-            }
-            ;;
-
-            if (tgt == $('#app')) return;
-
-            x.attr({ draggable: "true" }).onmousedown = dragselect;
-
-            x.addClass("-drag-enabled");
-        })
-    }
-
     static async delay(ms=1000) {
         return new Promise(res => setTimeout(res, ms));
     }
-    static tooltips() {
-        var ttip = $('tooltip#tooltip')[0];
-        if (!ttip) {
-            ttip = TAG("tooltip#tooltip", "fixed _tooltip-element", {
-                padding: ".5em"
-                , borderRadius: ".25em"
-                , border: "1px solid " + fw.pallete.FONT + '44'
-                , background: fw.pallete.BACKGROUND
-                , color: fw.pallete.FONT
-                , display: "none"
-                , zIndex: 9999
-            })
-            $("#app").app(ttip)
-            ttip.on("mouseleave", e => e.target.hide())
-        }
-        $(".-tooltip").forEach(tip => tip.on('mouseenter', e => {
-                if(!e.target.dataset.tip) return;
-                ttip.css({
-                    background: e.target.dataset.tipbg || fw.pallete.BACKGROUND
-                    , color: e.target.dataset.tipft || fw.pallete.FONT
-                    , width: e.target.dataset.tipwidth||'auto'
-                }).html(e.target.dataset.tip == "@" ? e.target.textContent : e.target.dataset.tip).show()
-            }).on('mousemove', e => {
-                ttip.style.top = (24 + e.clientY) + "px";
-                ttip.style.left = (24 + e.clientX) + "px";
-                ttip.style.transform = (e.clientX > window.innerWidth * .85) ? 'translateX(calc(-100% + -48px))' : 'translateX(0)';
-            }).on('mouseleave', e => ttip.hide()).removeClass("-tooltip")
-        )
-    }
-    static tileEffectClass(cls = null, clr = null) {
-        if (!cls) return;
-        $(`.${cls}`).forEach(x => {
-            if (!x.has("_effect-selector-attached")&&!x.has("-skip")) {
-                x.addClass("relative _effect-selector-attached").on("click", async e => {
-                    const
-                    bounds = e.target.getBoundingClientRect()
-                    , size = Math.max(bounds.width, bounds.height)
-                    , bubble = DIV("absolute block circle _bubble", {
-                        background: clr || (fw.pallete.FONT + "44")
-                        , width: size + "px"
-                        , height: size + "px"
-                        , top: e.layerY + "px"
-                        , left: e.layerX + "px"
-                        , transformOrigin: "center center"
-                        , transform: "translate(-50%, -50%) scale(.1)"
-                    })
-                    , wrap = DIV(`absolute wrap zero`).app(
-                        DIV(`relative left wrap zero no-scrolls`).app(bubble)
-                    )
-                    ;;
-                    e.target.app(wrap)
-                    await fw.sleep(10)
-                    await bubble.stop().anime({ transform: "translate(-50%, -50%) scale(1.75)", filter:`opacity(0)` }, ANIMATION_LENGTH)
-                    wrap.remove()
-                })
-            }
-        })
-    }
+
     static $(wrapper = null, context = document) {
         const t = [].slice.call(context.querySelectorAll(wrapper));
-        if(t[0] && t[0].id && t[0].id == wrapper.split(`#`)[1]) return t[0]
+        // if(t[0] && t[0].id && t[0].id == wrapper.split(`#`)[1]) return t[0]
         return t
     }
+
+    static nfmt = (n, f=2) => n && (n).toFixed(f)*-1 ? n.toFixed(f).replace(`.`, `,`).replace(/\B(?=(\d{3})+(?!\d))/g, ".") : `-`
 
 };
 
 $ = fw.$
 
 const
-maxis = { x: 0, y: 0 }
-, initpool = new Pool()
+initpool = new Pool()
 , bootloader = new Loader()
 , App = fw
 , GET = get = async (url, args) => {
@@ -1847,7 +1725,6 @@ maxis = { x: 0, y: 0 }
 }
 ;;
 
-window.onmousemove = e => window.maxis = e
 window.oncontextmenu = e => {
     let trigger, evs = [] ;;
     if(e.path) e.path.forEach(e => {
@@ -1878,13 +1755,347 @@ document.addEventListener("touchstart", function() {}, true);
 
 // LIBS
 function include(path, args) {
-    if($('#scr-'+path.hash()).length) return
+    const id = path.hash() ;;
+    if($('#scr-' + id).length) return
     const s = document.createElement('script') ;;
-    s.id = `scr-${path.hash()}`
+    s.id = `scr-${id}`
     s.type = 'text/javascript'
     s.src = path.indexOf(".js") + 1 ? path : path + '.js'
     s.args = args || {}
     document.getElementsByTagName('head')[0].appendChild(s)
+}
+
+function selects() {
+    $(`fselect`).forEach(sel => {
+        const
+        ft      = sel.attributes[`font`]?.value          || fw.pallete.FONT
+        , bg    = sel.attributes[`bg`]?.value            || fw.pallete.FOREGROUND
+        , rect  = sel.parent().getBoundingClientRect()
+        , h = Math.max(fw.em2px(2), rect.height)
+        , e = TAG(`form`, `relative wrap _select`, {
+            overflow: `visible`
+            , border:`1px solid ${fw.pallete.DARK2}`
+            , borderRadius: `.5em`
+            , background: fw.pallete.FOREGROUND
+            , padding:0
+            , margin:0
+        }).app(
+            DIV(`wrap no-scrolls`, { background: bg, color: ft, borderRadius:`.25em` }).app(
+                DIV(`relative bar`, { width:`calc(100% - ${h}px)` }).app(
+                    TAG(`input`).attr({ type: `hidden`, name: sel.attributes[`name`]?.value })
+                ).app(
+                    TAG(`input`, `row centered ellipsis content-left`, { border:`none` }).attr({ readonly: true })
+                )
+            ).app(
+                DIV(`relative bar`, { width: h + `px` }).app(
+                    SPAN(`arrow_drop_down`, `icon centered only-pointer`, { color: fw.pallete.FONT, fontSize:`1.5em` })
+                ).on(`click`, ev => menu.appear())
+            )
+        ).attr({
+            action: `javascript:void(0)`
+            , name: sel.getAttribute(`name`)
+        })
+        , menu  = DIV(`absolute row zero _menu`, { display:`none` }).app(
+            DIV(`row`, { height: h + `px`})
+        ).app(
+            DIV(`row no-scrolls -stage`, {
+                boxShadow: `0 0 1em ${fw.pallete.DARK2}`
+                , borderRadius: `.25em`
+                , background: bg
+                , color: ft
+            })
+        )
+        .on(`mouseleave`, function() { this._hidefn = setTimeout(e => e.hide(), AL * 10, this) })
+        .on(`mouseenter`, function() { clearInterval(this._hidefn) })
+        ;;
+        ;[].slice.call(sel.children).forEach(item => menu.on(`click`, _ => menu.disappear()).$(`.-stage`)[0].app(
+            item.mime().addClass(`row pointer tile content-left ellipsis`).css({
+                padding:`.5em`
+                , borderBottom: `1px solid ${fw.pallete.DARK2}`
+            }).on(`click`, ev => {
+                menu.$(`item`).not(ev.target).forEach(item => item.removeAttribute(`selected`))
+                ev.target.setAttribute(`selected`, true)
+                e.$(`input`)[0].value = ev.target.attributes["value"]?.value
+                e.$(`input`)[1].value = ev.target.textContent
+                e.dispatchEvent(new Event(`change`))
+            })
+        ))
+        if(sel.attributes[`onchange`]) {
+            e.on(`change`, _ => {
+                const f = eval(sel.attributes[`onchange`].value) ;;
+                f(e.json())
+            })
+        }
+        sel.parent().pre(e.app(menu))
+        sel.remove()
+        menu.$(`item`).forEach(item => {
+            if([ `true`, `selected`, `checked`, `default`, `1`, 1 ].indexOf(item.attributes[`selected`]?.value.toLowerCase())+1) item.dispatchEvent(new Event(`click`))
+        })
+        tileEffect(`.tile`)
+    })
+}
+
+function multiselects() {
+    $(`fmultiselect`).forEach(sel => {
+        const
+        ft      = sel.attributes[`font`]?.value || fw.pallete.FONT
+        , bg    = sel.attributes[`bg`]?.value   || fw.pallete.FOREGROUND
+        , rect  = sel.parent().getBoundingClientRect()
+        , h = Math.max(fw.em2px(2), rect.height)
+        , e = TAG(`form`, `relative wrap _multiselect`, { overflow: `visible`, background: fw.pallete.FOREGROUND, padding:0 }).app(
+            DIV(`wrap`, { background: bg, color: ft, borderRadius:`.25em` }).app(
+                DIV(`relative bar`, { width:`calc(100% - ${h}px)` }).app(
+                    DIV(`centered ellipsis content-left -tooltip _label`, { width: `calc(100% - 2em)` }).attr({ tip:`@` })
+                )
+            ).app(
+                DIV(`relative bar`, { width: h + `px` }).app(
+                    SPAN(`arrow_drop_down`, `icon centered only-pointer`, { color: fw.pallete.FONT, fontSize:`1.5em` })
+                ).on(`click`, ev => menu.appear().$(`[type=search]`)[0].focus())
+            )
+        ).attr({
+            action: `javascript:void(0)`
+            , name: sel.getAttribute(`name`)
+        })
+        , menu  = DIV(`absolute row zero _menu`, {
+            display:`none`
+            , boxShadow: `0 0 1em ${fw.pallete.DARK2}`
+            , borderRadius: `.25em`
+            , background: bg
+            , color: ft
+        }).app(
+            DIV(`row`, { height: `${h}px`}).app(
+                DIV(`relative left bar`, { width: h + `px` }).app(
+                    TAG(`input`, `centered only-pointer _master-check`, { margin:0, padding:0 }).attr({ type:`checkbox` }).on(`click`, ev => {
+                        menu.$(`.-item.-active`).map(item => item.$(`._check`)[0].checked = ev.target.checked)
+                        fill_label.fire()
+                    })
+                )
+            ).app(
+                DIV(`relative left bar`, { width: `calc(100% - ${h*2}px`, padding:`.25em 0` }).app(
+                    TAG(`input`, `row centered`, { padding:`.125em` }).attr({ type: `search` }).on([ `keyup`, `blur` ], ev => search_ev.fire(ev))
+                )
+            ).app(
+                DIV(`relative left bar only-pointer`, { width: h + `px` }).app(
+                    SPAN(`close`, `centered icon`)
+                ).on(`click`, _ => menu.disappear())
+            )
+        ).app(
+            DIV(`row scrolls -stage`, { maxHeight: `28vh` })
+        )
+        .on(`mouseleave`, function() { this._hidefn = setTimeout(e => e.hide(), AL * 10, this) })
+        .on(`mouseenter`, function() { clearInterval(this._hidefn) })
+        ;;
+        let count = 0 ;;
+        ;[].slice.call(sel.children).forEach(item => menu.$(`.-stage`)[0].app(
+            DIV(`row only-pointer no-scrolls tile -item -active`, {
+                height: h+`px`
+                , borderBottom: `1px solid ${fw.pallete.DARK2}`
+                // , display: count++ < 32 ? `inline-block` : `none`
+            }).app(
+                DIV(`relative left bar`, { width: h + `px` }).app(
+                    TAG(`input`, `centered _check`, {
+                        margin:0
+                        , padding:0
+                    }).attr({
+                        type:`checkbox`
+                        , name: sel.attributes[`name`]?.value||``
+                        , value: item.attributes[`value`]?.value||``
+                    })
+                )
+            ).app(
+                item.mime().addClass(`left bar content-left ellipsis no-scrolls`).css({
+                    lineHeight: 2
+                    , width: `calc(100% - ${h}px)`
+                })
+            ).on(`click`, function() {
+                this.$(`[type=checkbox]`)[0].click()
+                if(!this.$(`[type=checkbox]`)[0].checked) $(`._master-check`)[0].checked = false
+                fill_label.fire()
+            })
+        ))
+        sel.parent().pre(e.app(menu))
+        sel.remove()
+        menu.$(`item`).forEach(item => {
+            if(Boolean(item.attributes[`selected`])) item.dispatchEvent(new Event(`click`))
+        })
+        const fill_label = new throttle(_ => {
+            e.$(`._label`)[0].html(
+                menu.$(`.-item.-active`).map(item => item.$(`._check`)[0].checked ? item.textContent : null).filter(i=>i).join(` - `)
+            )
+            // let count = 0 ;;
+            if(menu.$(`.-item.-active`).filter(item => {
+                item.show()
+                return item.$(`._check`)[0].checked == false
+            }).length) e.$(`._master-check`)[0].checked = false
+            else e.$(`._master-check`)[0].checked = true
+        }, 40)
+        const search_ev = new throttle(ev => {
+            menu.$(`.-item`).forEach(item => {
+                if(!ev.target.value || ev.target.value.sanitized_compare(item.textContent)) {
+                    item.addClass(`-active`)
+                } else {
+                    item.remClass(`-active`).hide()
+                    item.$(`._check`)[0].checked = false
+                }
+            })
+            fill_label.fire()
+        }, 40) ;;
+        tooltips()
+        tileEffect(`.tile`)
+    })
+}
+
+function dropdowns() {
+    $(`fdropdown`).forEach(dp => {
+        const
+        e       = DIV(`relative wrap _dropdown`, { overflow: `visible` })
+        , label = dp.attributes[`label`]?.value         || ``
+        , ft    = dp.attributes[`font`]?.value          || fw.pallete.FONT
+        , bg    = dp.attributes[`bg`]?.value            || fw.pallete.FOREGROUND
+        , icon  = dp.attributes[`icon`]?.value          || `menu`
+        , float = dp.attributes[`orientation`]?.value   || `left`
+        , rect  = dp.parent().getBoundingClientRect()
+        , h = Math.max(fw.em2px(2), rect.height)
+        , menu  = DIV(`absolute row zero _menu`, { display:`none` }).app(
+            DIV(`row`, { height: `${h}px` }).app(
+                SPAN(`arrow_drop_up`, `icon ${float}`, { color: bg, fontSize: `4em`, transform: `translate(${float!=`left` ? `` : `-`}.125em, .25em)` })
+            )
+        ).app(
+            DIV(`row scrolls -stage`, {
+                boxShadow: `0 0 .5em ${fw.pallete.DARK2}`
+                , borderRadius: `.25em`
+                , background: bg
+                , color: ft
+                , maxHeight: `28vh`
+            })
+        )
+        ;;
+        e.app(
+            DIV(`wrap flex`)[float!=`left`?`pre`:`app`](
+                DIV(`relative bar`, { width: h + `px` }).app(
+                    SPAN(icon, `icon centered only-pointer`, { fontSize:`1.75em` })
+                ).on(`click`, ev => menu.appear())
+            )[float!=`left`?`pre`:`app`](
+                DIV(`relative bar`, { width:`calc(100% - ${h}px)` }).app(
+                    SPAN(label, `centered ellipsis content-${float}`, { width: `calc(100% - 2em)` })
+                )
+            )
+        )
+        ;[].slice.call(dp.children).forEach(item => menu.on(`click`, _ => menu.disappear()).$(`.-stage`)[0].app(
+            item.mime().addClass(`row pointer content-left ellipsis`).css({
+                padding:`1em`
+                , borderBottom: `1px solid ${fw.pallete.DARK2}`
+            })
+        ))
+        dp.parent().pre(e.app(menu))
+        dp.remove()
+    })
+}
+
+function tooltips() {
+    let ttip = $('tooltip#tooltip')[0];
+    if (!ttip) {
+        ttip = TAG("tooltip#tooltip", "fixed", {
+            padding: ".5em"
+            , borderRadius: ".25em"
+            , background: fw.pallete.BACKGROUND
+            , boxShadow: `0 0 .25em ` + fw.pallete.FONT
+            , color: fw.pallete.FONT
+            , display: "none"
+            , zIndex: 9999
+        })
+        $("#app").app(ttip)
+        // ttip.on("mouseleave", e => e.target.hide())
+    }
+    $(".-tooltip").forEach(tip => {
+        tip.on('mouseenter', e => {
+            let
+            v = e.target.attributes[`tip`]?.value
+                ? (e.target.attributes[`tip`].value == `@` ? e.target.innerHTML : e.target.attributes[`tip`].value)
+                : e.target.textContent
+            ;;
+            ttip.css({
+                background: e.target.attributes[`tip-background`]?.value || fw.pallete.FONT
+                , color: e.target.attributes[`tipclr`]?.value || fw.pallete.BACKGROUND
+                , width: e.target.attributes[`tipwd`]?.value || 'auto'
+            }).html(v).show()
+        }).on('mousemove', e => {
+            ttip.style.top = e.clientY + "px";
+            ttip.style.left = e.clientX + "px";
+            ttip.style.transform = (e.clientX > window.innerWidth * .85) ? `translateX(calc(-100% + -${fw.em2px(2)}px)` : 'translateX(3em)';
+        }).on('mouseleave', e => ttip.hide()).removeClass("-tooltip")
+    })
+}
+
+function tileEffect(selector=null, clr=null) {
+    if (!selector) return;
+    $(`${selector}`).forEach(x => {
+        if (!x.has("_effect-selector-attached")&&!x.has("-skip")) {
+            x.addClass("relative _effect-selector-attached").on("click", async e => {
+                const
+                bounds = e.target.getBoundingClientRect()
+                , size = Math.max(bounds.width, bounds.height)
+                , bubble = DIV("absolute block circle _bubble", {
+                    background: clr || (fw.pallete.FONT + "44")
+                    , width: size + "px"
+                    , height: size + "px"
+                    , top: e.layerY + "px"
+                    , left: e.layerX + "px"
+                    , transformOrigin: "center center"
+                    , transform: "translate(-50%, -50%) scale(.1)"
+                })
+                , wrap = DIV(`absolute wrap zero`).app(
+                    DIV(`relative left wrap zero no-scrolls`).app(bubble)
+                )
+                ;;
+                e.target.app(wrap)
+                await fw.sleep(10)
+                await bubble.stop().anime({ transform: "translate(-50%, -50%) scale(1.75)", filter:`opacity(0)` })
+                wrap.remove()
+            })
+        }
+    })
+}
+
+function enableDragging() {
+
+    $(".-drag-trigger, .-drag").each((x, i) => {
+
+        if (x.has(".-drag-enabled")) return;
+
+        var ax = 0, ay = 0, bx = 0, by = 0;
+        const
+        tgt = x.has("-drag") ? x : x.upFind("-drag-target")
+        , dragselect = e => {
+            e.preventDefault();
+            bx = e.clientX;
+            by = e.clientY;
+            document.onmouseup = dragend;
+            document.onmousemove = dragstart;
+        }
+        , dragstart = e => {
+            e.preventDefault();
+            tgt.style.transition = 'none';
+            tgt.style.transitionDelay = "0s";
+            ax = bx - e.clientX;
+            ay = by - e.clientY;
+            bx = e.clientX;
+            by = e.clientY;
+            tgt.style.top = Math.min(window.innerHeight - fw.em2px(3), Math.max(0, tgt.offsetTop - ay)) + "px";
+            tgt.style.left = Math.max(0, Math.min(window.innerWidth-fw.em2px(3), tgt.offsetLeft - ax)) + "px";
+        }
+        , dragend = e => {
+            document.onmouseup = null;
+            document.onmousemove = null;
+        }
+        ;;
+
+        if (tgt == $('#app')) return;
+
+        x.attr({ draggable: "true" }).onmousedown = dragselect;
+
+        x.addClass("-drag-enabled");
+    })
 }
 
 console.log(`  ____ _     ___   __  __  ___  ____  _____\n / ___| |   |_ _| |  \\/  |/ _ \\|  _ \\| ____|\n| |   | |    | |  | |\\/| | | | | | | |  _|\n| |___| |___ | |  | |  | | |_| | |_| | |___\n \\____|_____|___| |_|  |_|\\___/|____/|_____|\n\n`);
