@@ -3,9 +3,9 @@
  *--------------------------------------------------------------------------------------------*/
 
 const
-io      = require("../../lib/utils/fio")
-, cache = require("../../lib/utils/fcache")
-, date  = require("../../lib/utils/fdate")
+io      = require("../../lib/utils/io")
+, cache = require("../../lib/utils/cache")
+, date  = require("../../lib/utils/date")
 ;;
 
 module.exports = class ai {

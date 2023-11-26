@@ -9,10 +9,10 @@ START = true
 , https     = require('https')
 , Cosmos    = require('@azure/cosmos').CosmosClient
 , fw        = require('../fw')
-, fobject   = require('../utils/fobject')
-, farray    = require('../utils/farray')
-, fdate     = require('../utils/fdate')
-, ftext     = require('../utils/ftext')
+, fobject   = require('../utils/object')
+, farray    = require('../utils/array')
+, fdate     = require('../utils/date')
+, ftext     = require('../utils/text')
 
 // MACROS
 , CosmosDB      = conf => new Cosmos({

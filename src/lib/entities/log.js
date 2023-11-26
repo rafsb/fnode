@@ -3,14 +3,16 @@
  *--------------------------------------------------------------------------------------------*/
 
 const
-md5      = require('md5')
-, fw     = require('../fw')
-, io     = require('../utils/fio')
-, fdate  = require('../utils/fdate')
-, Entity = require('../interfaces/entity')
+md5       = require('md5')
+, fw      = require('../fw')
+, io      = require('../utils/io')
+, fdate   = require('../utils/date')
+, ftext   = require('../utils/text')
+, fobject = require('../utils/object')
+// , Entity  = require(`../interfaces/entity`)
 ;;
 
-class Log extends Entity {
+class Log extends fobject {
 
     static dbconf(cfg){
 
@@ -42,8 +44,8 @@ class Log extends Entity {
 
     static once(worker_='Log', task_='once', type_='info', data_='', clr=ETerminalColors.FT_CYAN, vlevel=4, user_=null) {
         if(VERBOSE_PERSISTANCE_IO) io.write(`var/logs/${worker_}.log`, `${fdate.as()} ${task_} -> ${type_}\n${data_}\n\n`, EIO.APPEND)
-        const l = new Log({ worker_, task_, type_, data_ }, user_) ;;
-        if(vlevel<=VERBOSE_PERSISTANCE_THRESHOLD) l.log()
+        // const l = new Log({ worker_, task_, type_, data_ }, user_) ;;
+        // if(vlevel<=VERBOSE_PERSISTANCE_THRESHOLD) l.log()
         if(VERBOSE>=vlevel) {
             const
             max = process.stdout.columns || 1024
@@ -52,14 +54,14 @@ class Log extends Entity {
             ;;
             process.stdout.write(
                 (clr ? clr : '')
-                + fw.fill(executer+'', ' ', x1, 1)
-                + fw.fill(action+'', ' ', x2, 1)
-                + fw.fill(message + '', ' ', Math.max(process.stdout.columns, 64) - (x1 + x2), 1)
+                + ftext.fill(worker_+'', ' ', x1, 1)
+                + ftext.fill(task_+'', ' ', x2, 1)
+                + ftext.fill(data_ + '', ' ', Math.max(process.stdout.columns, 64) - (x1 + x2), 1)
                 + (clr ? ETerminalColors.RESET : '')
                 + '\n'
             )
         }
-        return l
+        // return l
     }
 
     static warn(worker_, task_, data_, clr=ETerminalColors.FT_YELLOW, user_=null) {

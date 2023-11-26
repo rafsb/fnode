@@ -3,8 +3,8 @@
  *--------------------------------------------------------------------------------------------*/
 
 const
-io    = require("../utils/fio")
-, date  = require("../utils/fdate")
+io    = require("../utils/io")
+, date  = require("../utils/date")
 ;;
 
 class iostore {
@@ -29,7 +29,7 @@ class iostore {
 
     save(fn) {
         try {
-            const save = io.jin("../var/db/" + this.db_name, this.db) ;;
+            const save = io.jin(`../var/db/${VERSION}/${this.db_name}`, this.db) ;;
             if(fn) fn(null, save)
         } catch(e) {
             if(fn) fn(e, null)
@@ -39,8 +39,8 @@ class iostore {
 
     load(db_name) {
         if(db_name) this.db_name = db_name?.container || db_name
-        if(!io.exists("../var/db/" + this.db_name)) io.jin("../var/db/" + this.db_name, { ts: date.time(), collection: {}, options: this.options||{} });
-        this.db = io.jout("../var/db/" + this.db_name) ;;
+        if(!io.exists(`../var/db/${VERSION}/${this.db_name}`)) io.jin(`../var/db/${VERSION}/${this.db_name}`, { ts: date.time(), collection: {}, options: this.options||{} });
+        this.db = io.jout(`../var/db/${VERSION}/${this.db_name}`) ;;
         return this
     }
 

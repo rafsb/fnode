@@ -2,7 +2,7 @@
  * Theme
  *--------------------------------------------------------------------------------------------*/
 
-const io = require('../../lib/utils/fio') ;;
+const io = require('../../lib/utils/io') ;;
 
 module.exports = class Theme {
     static init(req) {

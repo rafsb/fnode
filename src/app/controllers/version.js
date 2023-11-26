@@ -4,7 +4,7 @@
 
 module.exports = class Version {
 
-    static async init(args) {
+    static async init() {
         return VERSION
     }
 

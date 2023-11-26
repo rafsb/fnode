@@ -6,9 +6,9 @@ const
 md5         = require('md5')
 , hash      = require('sha256')
 , initiator = require('../interfaces/initiator')
-, user      = require('../../lib/entities/user')
-, ftext     = require('../../lib/utils/ftext')
-, fdate     = require('../../lib/utils/fdate')
+, user      = require('../../lib/entities/users')
+, ftext     = require('../../lib/utils/text')
+, fdate     = require('../../lib/utils/date')
 
 // userspace
 , SESSION_DURATION = 1000 * 60 * 60 * 24 * 365
@@ -47,11 +47,11 @@ module.exports = class CAuth extends initiator {
         if(req.uat) {
             try {
                 const authobj = (new CAuth).unwrap(req.uat) ;;
-                if(authobj.userid && req.device == authobj.device) {
+                if(authobj?.userid && req.device == authobj.device) {
                     const u = await user.load(authobj.userid) ;;
                     if(u && authobj.ts + SESSION_DURATION > fdate.time()) {
                         res.status = true
-                        delete u.senha
+                        delete u.password
                         delete u.uat
                         res.user = u
                     }
@@ -75,9 +75,9 @@ module.exports = class CAuth extends initiator {
             try {
                 if(DB_DRIVER == "fstore") {
                     const u = await user.load(md5(req.payload.user)) ;;
-                    if(u && hash(''+req.payload?.pswd) === u.pswd) res.uat = (new CAuth).wrap({ userid: u.id, device: req.device, ts: fdate.time() })
+                    if(u && hash(''+req.payload?.pswd) === u.password) res.uat = (new CAuth).wrap({ userid: u.id, device: req.device, ts: fdate.time() })
                 } else {
-                    const u = (await user.filter(null, [ [ 'usuario', req.payload.user || "!!USER!!" ], [ 'senha', req.payload.pswd || "!!PSWD!!" ] ])) ;;
+                    const u = (await user.filter(null, [ [ 'username', req.payload.user || "!!NOT_USER!!" ], [ 'password', hash(``+req.payload.pswd) ] ])) ;;
                     if(u.status && u.items?.length && u.items[0]) res.uat = (new CAuth).wrap({ userid: u.items[0].id, device: req.device, ts: fdate.time() })
                 }
             } catch(e) { console.trace(e) }

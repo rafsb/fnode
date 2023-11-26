@@ -4,8 +4,8 @@
 
 const
 VERBOSE  = false
-, IO = require('../utils/fio')
-, fobject = require('../utils/fobject')
+, IO = require('../utils/io')
+, fobject = require('../utils/object')
 ;;
 
 module.exports = class Classname extends fobject {
