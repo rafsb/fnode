@@ -4,15 +4,14 @@
 
 const
 md5       = require('md5')
-, fw      = require('../fw')
 , io      = require('../utils/io')
 , fdate   = require('../utils/date')
 , ftext   = require('../utils/text')
 , fobject = require('../utils/object')
-// , Entity  = require(`../interfaces/entity`)
+, Entity  = require(`../interfaces/entity`)
 ;;
 
-class Log extends fobject {
+class Log extends Entity {
 
     static dbconf(cfg){
 
@@ -30,9 +29,9 @@ class Log extends fobject {
         console.log(this.toObject())
     }
 
-    constructor(obj){
+    constructor(obj, user_){
         const date = new fdate() ;;
-        super(fw.blend({
+        super(fobject.blend({
             id              : md5(date.time())
             , worker_       : `System`
             , task_         : `log`
