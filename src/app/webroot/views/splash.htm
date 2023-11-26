@@ -6,24 +6,15 @@
     <script>
         get(`img/splash.svg`, res => {
             res = res.morph()[0]
-            res.$(`path`).forEach(p => {
+            res.css({ height: '6em' }).$(`path`).forEach(p => {
                 const len = p.getTotalLength() ;;
                 p.css({
-                    stroke: `{{peter_river}}`
-                    , "stroke-dasharray": len
+                    "stroke-dasharray": len
                     , "stroke-dashoffset": len
-                    , fill: `transparent`
                 })
             })
             $(`.-splash`)[0].app(DIV(`centered -logo`).app(res))
-            setTimeout(_ => {
-                res.$(`path`).forEach((p, i) => {
-                    p.anime({
-                        stroke: i < 4 ? `{{peter_river}}` : `{{wet_asphalt}}`
-                        , "stroke-dashoffset": 0
-                    }, AL, AL/8*i).then(p => p.anime({ fill: i < 4 ? `{{peter_river}}` : `{{wet_asphalt}}` }))
-                })
-            }, AL/2)
+            setTimeout(_ => res.$(`path`).forEach((p, i) => p.anime({ "stroke-dashoffset": 0 }, AL, AL/8*i)), AL/2)
         })
         bootloader.onReadyStateChange.add(p => $('.-boot-progress').at()?.anime({ width: `${100-p*100}%` }))
         bootloader.onFinishLoading.add(_ => {
