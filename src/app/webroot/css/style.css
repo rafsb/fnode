@@ -27,9 +27,10 @@ select option {
 
 table { border-collapse: collapse; width: 100%; color: inherit }
 tr { width:100%; }
-tr:nth-child(odd) { background: #fff2; }
-tr:nth-child(even) { background: #0002; }
-td, th { border: 1px solid #00000022; text-align: left; padding: .5em;white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* tr:nth-child(odd) { background: #fff2; }
+tr:nth-child(even) { background: #0002; } */
+td, th { border: 1px solid #00000022; padding:.25em }
+td, th, tspan, th>span, td>span { width:100%; text-align: left;white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding:.25em; }
 
 @media only screen and (max-width: 1920px) {
     /* body { font-size: 14px;  } */
