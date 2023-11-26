@@ -5,18 +5,20 @@ const
 VERBOSE         = false
 , Classname     = require(`./classname`)
 , DB            = require(`../models/${DB_DRIVER}`)
-, IO            = require("../utils/fio")
-, ftext         = require('../utils/ftext')
-, fw            = require('../fw')
-, fobject       = require('../utils/fobject')
-, farray        = require('../utils/farray')
-, fdate         = require('../utils/fdate')
-, md5           = require('md5')
+, IO            = require("../utils/io")
+, ftext         = require('../utils/text')
+, fobject       = require('../utils/object')
+, farray        = require('../utils/array')
+, fdate         = require('../utils/date')
 ;;
 
 class Entity extends Classname {
 
-    uid(x){ if(x) this.id = x; return this.id }
+    uid(x){
+        if(x) this.id = x;
+        if(!this.id) this.id = `ID:${fdate.time().toString(16).toUpperCase()}`
+        return this.id
+    }
 
     p(field, x){ if(x!==null&&x!==undefined) this[field] = x; return this[field] }
 
@@ -25,8 +27,7 @@ class Entity extends Classname {
             const me = this ;;
             IO.jout(src_name).each(src => me[src.key] = src.value)
             src_name          = src_name.split('/');
-            this.source_name_ = src_name[src_name.length - 1].replace(/(.json\b)|(.js\b)/gi, '')
-            this.status_      = this.status_ || EStatus.NOT_SET
+            this._source_name = src_name[src_name.length - 1].replace(/(.json\b)|(.js\b)/gi, '')
             this.id_builder()
             return this
         }
@@ -83,7 +84,7 @@ class Entity extends Classname {
         return fobject.blend({
             db          : DB_NAME
             , container : `${classname.name}`
-            , pk        : 'pk' // classname.cls.cast().pk_ || DB_PK
+            , pk        : DB_PK
             , key       : DB_KEY
             , endpoint  : DB_ENDPOINT
         }, conf||{})
@@ -94,11 +95,8 @@ class Entity extends Classname {
     }
 
     constructor(obj={}, pk=null) {
-        const date = fdate.cast() ;;
-        super(fobject.blend({
-            status         : EStatus.ACTIVE
-        }, obj))
-        if(!this.id) this.id_builder();
+        super(obj)
+        if(!this.id) this.id_builder()
     }
 
     async save(req) {
@@ -121,7 +119,6 @@ class Entity extends Classname {
                 delete o._created;
                 const db = await DB.load(conn) ;;
                 try {
-                    o = fobject.blend({ status: EStatus.ACTIVE }, o)
                     if(DB_DRIVER == "fstore") ret = db.set(o.id, o, _=>_, true)
                     else ret = await db.save(o)
                 } catch(e){
@@ -177,6 +174,23 @@ class Entity extends Classname {
         }, conf)
     }
 
+    insert_str(conn) {
+        conn = this.dbconf(conn)
+        const item = this ;;
+        return `
+            INSERT INTO ${conn.pk ? `[${conn.pk}].` : ``}[${conn.container}]([${Object.keys(item).join('],[')}])
+            VALUES(${Object.values(item).map(v => `'${v}'`).join(',')})`.trim()
+    }
+
+    update_str(conn) {
+        conn = this.dbconf(conn)
+        const item = this ;;
+        return `
+            UPDATE ${conn.pk ? `[${conn.pk}].` : ``}[${conn.container}]
+            SET ${Object.keys(item).map(k => k.toLowerCase()!=`id` ? `[${k}]='${item[k]}'` : null).filter(i=>i).join(',')}
+            WHERE [id]='${this.uid()}'`.trim()
+    }
+
     static querify(params) {
 
         if(!params) params = {}
@@ -198,15 +212,15 @@ class Entity extends Classname {
                             switch(operator.toUpperCase().trim()) {
 
                                 case('//') :
-                                    query_filters.push(`REGEXMATCH(LOWER(${DB_DRIVER == 'cosmos' ? 'c.' : 'a.'}${key}), "${ftext.rx(value.toLowerCase(), 4, '\\\\b', false)}")`);
+                                    query_restrictions.push(`REGEXMATCH(LOWER(a.[${key}]), '${ftext.rx((Array.isArray(value)?value.join(`|`):value).toLowerCase(), 4, '\\\\b', false)}')`);
                                 break
 
                                 case('LIKE'||'NOT LIKE'||'!LIKE') :
-                                    query_restrictions.push(`${DB_DRIVER == 'cosmos' ? 'c.' : 'a.'}${key} ${operator} "%${value}%"`)
+                                    query_restrictions.push(Array.isArray(value) ? value.map(v => `a.[${key}] ${operator} '%${v}%'`).join(` AND `) : `a.[${key}] ${operator} '%${value}%'`)
                                 break
 
                                 default :
-                                    query_restrictions.push(`${DB_DRIVER == 'cosmos' ? 'c.' : 'a.'}${key}${operator}'${value}' `)
+                                    query_restrictions.push(`a.[${key}] ${Array.isArray(value) ? `IN` : operator} ${Array.isArray(value) ? `('${value.join(`','`)}')` : `'${value}'`}`)
                                 break
 
                             }
@@ -224,15 +238,15 @@ class Entity extends Classname {
                             switch(operator.toUpperCase().trim()) {
 
                                 case('//') :
-                                    query_filters.push(`REGEXMATCH(LOWER(${DB_DRIVER == 'cosmos' ? 'c.' : 'a.'}${key}), "${ftext.rx(value.toLowerCase(), 4, '\\\\b', false)}")`);
+                                    query_filters.push(`REGEXMATCH(LOWER(a.[${key}]), '${ftext.rx((Array.isArray(value)?value.join(`|`):value).toLowerCase(), 4, '\\\\b', false)}')`);
                                 break
 
                                 case('LIKE'||'NOT LIKE'||'!LIKE') :
-                                    query_filters.push(`${DB_DRIVER == 'cosmos' ? 'c.' : 'a.'}${key} ${operator} "%${value}%"`)
+                                    query_filters.push(Array.isArray(value) ? value.map(v => `a.[${key}] ${operator} '%${v}%'`).join(` OR `) : `a.[${key}] ${operator} '%${value}%'`)
                                 break
 
                                 default :
-                                    query_filters.push(`${DB_DRIVER == 'cosmos' ? 'c.' : 'a.'}${key}${operator}'${value}' `)
+                                    query_filters.push(`a.[${key}] ${Array.isArray(value) ? `IN` : operator} ${Array.isArray(value) ? `('${value.join(`','`)}')` : `'${value}'`}`)
                                 break
 
                             }
@@ -246,16 +260,15 @@ class Entity extends Classname {
         }
         params.order = params?.order || []
         let res = '' ;;
-        res += params.query || `SELECT * FROM ${DB_DRIVER == 'cosmos' ? 'c' : this.classname().name.toLowerCase() + " as a "} `
+        res += `SELECT * FROM ${params.query?`(${params.query})`:(DB_PK?`[${DB_PK}].`:``)}${"[" + this.classname().name.toLowerCase() + "] as a "} `
         if(!params.query || (params.query && !(params.query.toLowerCase().indexOf("where")+1))) {
             res += query_restrictions.length ? ` WHERE ${ query_restrictions.join(` AND `) } ` : ``
             res += query_filters.length ? `${query_restrictions.length ? ' AND (' : ' WHERE ('}${query_filters.join(` OR `)})` : ``
         }
         if(!params.query || (params.query && !(params.query.toLowerCase().indexOf("order")+1))) {
-            res += params.order && params.order.length ? `ORDER BY ${DB_DRIVER == 'cosmos' ? 'c.' : 'a.'}${params.order[0]} ${params.order[1]||'DESC'}` : ''
+            res += params.order && params.order.length ? `ORDER BY a.[${params.order[0]}] ${params.order[1]||'DESC'}` : ''
         }
-        console.log(res)
-        return res
+        return res.trim()
     }
 
     static async list(order, conn) {
@@ -267,9 +280,8 @@ class Entity extends Classname {
             return all
         } else {
             const classtype = this.classname() ;;
-            let items = [];
             const db = await DB.load(conn) ;;
-            if(db) return await db.iterator(Entity.querify({ order }), classtype.cls)
+            if(db) return await db.query(classtype.cls.querify({ order }), classtype.cls)
         }
     }
 
@@ -284,35 +296,29 @@ class Entity extends Classname {
 
     }
 
-    static async ls(order, dir, conn) {
-        return await this.list(order, conn)
-    }
-
     static async load(id, conn) {
         conn = this.dbconf(conn);
         let item = null;
         const
-        db = await DB.load(conn)        
+        db = await DB.load(conn)
         ;;
         if(DB_DRIVER == 'fstore') {
             item = db.get(id)
         } else {
-            const 
+            const
             classtype = this.classname()
             , filters = [ [ 'id', id, '='] ]
             ;;
             if(DB_DRIVER == 'cosmos' && conn.pk) filters.push([ 'pk', conn.pk ]) ;
             if(db) {
-                console.log({db})
                 const tmp = (await db.query(classtype.cls.querify({filters}), classtype.cls))
                 if(tmp.status) item = tmp.items[0]
             } else console.error(new Date(), classtype.name, `load`, 'the database object is not present')
         }
-        return item
+        return this.classname().cls.cast(item)
     }
 
     async drop(conn){
-        console.warn(this.classname().name, 'drop', this.id);
         conn = this.dbconf(conn);
         var res = null;
         const db = await DB.load(conn) ;;
@@ -353,29 +359,15 @@ class Entity extends Classname {
         var items = [];
         try {
             const db = await DB.load(conn) ;;
-            items = await db.query(query, classtype.cls)
+            items = await db.query(ftext.prepare(query||``, {
+                classname: classtype.name.toLowerCase()
+            }), classtype.cls)
         } catch(e) {
             console.error(new Date(), classtype.name, "query", e.toString())
             if(VERBOSE > 2) console.trace(e)
             items = []
         }
         return items
-    }
-
-    static async list_by_status(status_=EStatus.ACTIVE, conn) {
-        return await this.filter(null, [ [ "status_", status_ ] ], null, conn)
-    }
-
-    static async list_actives(conn) {
-        return await this.list_by_status(EStatus.ACTIVE, conn)
-    }
-
-    static async lsa(conn) {
-        return await this.list_by_status(EStatus.ACTIVE, conn)
-    }
-
-    static async list_by_type(type_=ESourceTypes.NOT_SET, conn) {
-        return await this.filter(null, [ [ "type_", type_ ] ], null, conn)
     }
 
     static async iterator(config={}, conn) {
@@ -417,8 +409,12 @@ class Entity extends Classname {
     }
 
     static async fields() {
-        const db = await this.pipe() ;;
-        return await db.query(`SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='${this.classname().name}'`)
+        const
+        db = await this.pipe()
+        , res = await db.query(`SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='${this.classname().name}'`)
+        ;;
+        if(res.items.length) res.items = res.items.map(o => o[`COLUMN_NAME`])
+        return res
     }
 
 }
