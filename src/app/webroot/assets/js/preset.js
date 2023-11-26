@@ -45,16 +45,18 @@ wsport = location.port
 ;;
 ws.onmessage = function(res) {
     try { res = JSON.parse(res.data) } catch(e) { console.warn(e); res = res.data }
-    const data = typeof res == 'string' ? res : res.data ;;
-    if(res.emitter && socket_callbacks[res.emitter]) Promise.resolve(socket_callbacks[res.emitter](data))
+    let emitter = res.emitter ;;
+    const data = typeof res == 'string' ? res : (res.data || res) ;;
+    emitter = data.emitter ? data.emitter : emitter
+    if(emitter && socket_callbacks[emitter]) Promise.resolve(socket_callbacks[emitter](data))
 }
 
 /**
  * LET THERE BE MAGIC
  */
 blend(fw, {
-    components      : {}
-    , caches         : {}
+    components       : {}
+    , cache          : {}
     , flags          : new Set()
     , locale         : fw.storage("locale") || fw.storage("locale", ELocales.BR)
     , theme          : fw.storage("theme")  || fw.storage("theme", APP_DEFAULT_THEME)
@@ -101,21 +103,26 @@ sock(`version`, res => {
 
     } else {
 
-        sock('auth/check', res => {
+        function load(){
+            bootloader.dependencies.add("theme")
+            sock(`theme`, {
+                data: { theme: fw.theme }
+                , cb: async res => {
+                    blend(fw.pallete, res)
+                    bootloader.onFinishLoading.add(_ => [ "background", "foreground" ].forEach(i => $(`.--${i}`).anime({ background: fw.pallete[i.toUpperCase()] })))
+                    bootloader.ready('theme')
+                    fw.initialize()
+                }
+            })
+        }
+
+        if(APP_NEEDS_LOGIN) sock('auth/check', res => {
             if(res.status) {
                 fw.components.user = res.user
-                bootloader.dependencies.add("theme")
-                sock(`theme`, {
-                    data: { theme: fw.theme }
-                    , cb: async res => {
-                        blend(fw.pallete, res)
-                        bootloader.onFinishLoading.add(_ => [ "background", "foreground" ].forEach(i => $(`.--${i}`).anime({ background: fw.pallete[i.toUpperCase()] })))
-                        bootloader.ready('theme')
-                        fw.initialize()
-                    }
-                })
+                load()
             } else fw.exec('login')
         })
+        else load()
 
         bootloader.ready("v")
 
