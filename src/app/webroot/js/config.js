@@ -7,6 +7,7 @@
  *
  */
 window.VERBOSE            = true
+window.APP_NEEDS_LOGIN    = false
 /*
  * ENUMS
  */
