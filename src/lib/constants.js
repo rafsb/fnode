@@ -1,3 +1,5 @@
+const path = require(`path`) ;;
+
 // GENERAL
 global.APP_LOCALE       = process.env.APP_LOCALE    || "pt-br"
 global.CACHE_VERSION    = process.env.CACHE_VERSION || `0.0-prod`
@@ -14,15 +16,15 @@ global.VERBOSE_PERSISTANCE_THRESHOLD = process.env.VERBOSE_PERSISTANCE_THRESHOLD
 
 // ENUMS
 global.EPaths = Object.freeze({
-    APP             : ROOT + 'app/'
-    , ETC           : ROOT + 'etc/'
-    , LIB           : ROOT + 'lib/'
-    , MODELS        : ROOT + 'app/models/'
-    , CONTROLLERS   : ROOT + 'app/controllers/'
-    , WEBROOT       : ROOT + 'app/webroot/'
-    , ASSETS        : ROOT + 'app/webroot/assets/'
-    , VIEWS         : ROOT + 'app/webroot/views/'
-    , ENTITIES      : ROOT + 'lib/entities/'
+    APP             : path.join(ROOT, 'app') + path.sep
+    , ETC           : path.join(ROOT, 'etc') + path.sep
+    , LIB           : path.join(ROOT, 'lib') + path.sep
+    , MODELS        : path.join(ROOT, 'app','models') + path.sep
+    , CONTROLLERS   : path.join(ROOT, 'app','controllers') + path.sep
+    , WEBROOT       : path.join(ROOT, 'app','webroot') + path.sep
+    , ASSETS        : path.join(ROOT, 'app','webroot','assets') + path.sep
+    , VIEWS         : path.join(ROOT, 'app','webroot','views') + path.sep
+    , ENTITIES      : path.join(ROOT, 'lib','entities') + path.sep
 })
 
 global.EStatus = Object.freeze({
