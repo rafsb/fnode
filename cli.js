@@ -19,14 +19,15 @@ global.DB_PK            = process.env.DB_PK            || ""
 global.DB_KEY           = process.env.DB_KEY           || ""
 global.DB_ENDPOINT      = process.env.DB_ENDPOINT      || ""
 global.DB_PORT          = process.env.DB_PORT          || ""
+global.DB_CACHE         = process.env.DB_CACHE * 1     || 1
 global.SESSION_DURATION = process.env.SESSION_DURATION || 24 * 60
 global.ROOT             = __dirname + '/src/'
 
 const
 path        = require('path')
-, fio       = require('./src/lib/utils/fio')
-, ftext     = require('./src/lib/utils/ftext')
-, fdate     = require('./src/lib/utils/fdate')
+, fio       = require('./src/lib/utils/io')
+, ftext     = require('./src/lib/utils/text')
+, fdate     = require('./src/lib/utils/date')
 , express   = require('express')
 , parser    = require('body-parser')
 , app       = express()
