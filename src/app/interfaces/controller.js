@@ -1,6 +1,6 @@
 const
 auth = require(`../controllers/auth`)
-, fobject = require('../../lib/utils/fobject')
+, fobject = require('../../lib/utils/object')
 , classname = require('../../lib/interfaces/classname')
 ;;
 
@@ -31,7 +31,7 @@ class InterfaceController extends classname {
         req.maxSize = req.maxSize || 100
         if(!req.payload) req.payload = {}
         if(!req.payload.filters) req.payload.filters = []
-        
+
         if(!req.payload.restrictions) req.payload.restrictions = []
         req.payload.restrictions = req.payload.restrictions.concat(this.forced_filters)
 
@@ -98,40 +98,22 @@ class InterfaceController extends classname {
 
         return res
     }
-    
-    // async drop(req) {
-    //     let res = { status: 0 }
-    //     const
-    //     id = req.payload.id || req.params[0]
-    //     , key = req.params[1]
-    //     ;;
-    //     if (id) {
-    //         const
-    //         { affectedRows } = await this.entity.drop(id, key || null)
-    //         , status = true && affectedRows
-    //         ;;
-    //         res = { status, affectedRows }
-    //     }
-    //     return res
-    // }
 
     async drop(req) {
-        const 
-        res = { status: 0 }
-        , id = req.payload.id || req.params[0] 
+        let res = { status: 0 }
+        const
+        id = req.payload.id || req.params[0]
+        , key = req.params[1]
         ;;
         if (id) {
             const
-            item = await this.entity.load(id)
+            { affectedRows } = await this.entity.drop(id, key || null)
+            , status = true && affectedRows
             ;;
-            if(item) {
-                item.status = EStatus.REMOVED
-                res.status = await item.save()
-            }
+            res = { status, affectedRows }
         }
         return res
     }
-
 }
 
 module.exports = InterfaceController ;;
