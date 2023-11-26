@@ -50,6 +50,59 @@ class FCallResponse {
 
 class fw {
 
+    static pallete = {
+        ALIZARIN            : "#E84C3D"
+        , AMETHYST          : "#9C56B8"
+        , ASBESTOS          : "#7E8C8D"
+        , BELIZE_HOLE       : "#2A80B9"
+        , BURRO_QNDO_FOJE   : "#8C887B"
+        , CARROT            : "#E67D21"
+        , CLOUDS            : "#ECF0F1"
+        , CONCRETE          : "#95A5A5"
+        , EMERLAND          : "#53D78B"
+        , GREEN_SEA         : "#169F85"
+        , ICE_PINK          : "#CA179E"
+        , LIME              : "#BAF702"
+        , MIDNIGHT_BLUE     : "#27283D"
+        , NEPHRITIS         : "#30AD63"
+        , ORANGE            : "#F39C19"
+        , PASTEL            : "#FEC200"
+        , PETER_RIVER       : "#2C97DD"
+        , POMEGRANATE       : "#C0382B"
+        , PUMPKIN           : "#D35313"
+        , PURPLE_PINK       : "#8628B8"
+        , SILVER            : "#BDC3C8"
+        , SUN_FLOWER        : "#F2C60F"
+        , TURQUOISE         : "#00BE9C"
+        , WET_ASPHALT       : "#383C59"
+        , WISTERIA          : "#8F44AD"
+        /*** SYSTEM***/
+        , BACKGROUND        : "#FFFFFF"
+        , FOREGROUND        : "#ECF1F2"
+        , FONT              : "#2C3D4F"
+        , FONTINVERTED      : "#F2F2F2"
+        , FONTBLURED        : "#7E8C8D"
+        , SPAN              : "#2980B9"
+        , DISABLED          : "#BDC3C8"
+        , DARK1             : "rgba(0,0,0,.08)"
+        , DARK2             : "rgba(0,0,0,.16)"
+        , DARK3             : "rgba(0,0,0,.32)"
+        , DARK4             : "rgba(0,0,0,.64)"
+        , LIGHT1            : "rgba(255,255,255,.08)"
+        , LIGHT2            : "rgba(255,255,255,.16)"
+        , LIGHT3            : "rgba(255,255,255,.32)"
+        , LIGHT4            : "rgba(255,255,255,.64)"
+        /*** PALLETE ***/
+        , WHITE             : "#FFFFFF"
+        , BLACK             : "#000000"
+        , CYAN              : "#01F2F2"
+        , MAGENTA           : "#E10085"
+        , YELLOW            : "#F2DE00"
+        , RED               : "#FF0000"
+        , GREEN             : "#00FF00"
+        , BLUE              : "#0000FF"
+    }
+
     initialize(){ this.initpool.fire() }
 
     static async call(url, args=null, method=null, head=null){
@@ -96,8 +149,8 @@ class fw {
         return md5(Math.random() * (fdate.as('Ymdhis') * 1)).slice(0, n || 128)
     }
 
-    static colors(pallete="light"){
-        return pallete&&this.color_pallete[pallete] ? this.color_pallete[pallete] : this.color_pallete;
+    static colors(color){
+        return fw.pallete[color] || fw.pallete.BLACK
     }
 
     static hashit(o){ if(typeof o == "object" || typeof o == "array") o = JSON.stringify(o); return btoa(o) }
@@ -167,55 +220,6 @@ class fw {
         this.initpool       = new Pool()
         this.onPragmaChange = new Pool()
         this.components = {}
-        this.prism      = {
-            ALIZARIN:"#E84C3D"
-            , PETER_RIVER:"#2C97DD"
-            , ICE_PINK: "#CA179E"
-            , EMERLAND:"#53D78B"
-            , SUN_FLOWER:"#F2C60F"
-            , AMETHYST:"#9C56B8"
-            , CONCRETE:"#95A5A5"
-            , WET_ASPHALT:"#383C59"
-            , TURQUOISE:"#00BE9C"
-            , PURPLE_PINK:"#8628B8"
-            , PASTEL: "#FEC200"
-            , CLOUDS:"#ECF0F1"
-            , CARROT:"#E67D21"
-            , MIDNIGHT_BLUE:"#27283D"
-            , WISTERIA:"#8F44AD"
-            , BELIZE_HOLE:"#2A80B9"
-            , NEPHRITIS:"#27AE61"
-            , GREEN_SEA:"#169F85"
-            , ASBESTOS:"#7E8C8D"
-            , SILVER:"#BDC3C8"
-            , POMEGRANATE:"#C0382B"
-            , PUMPKIN: "#D35313"
-            , ORANGE: "#F39C19"
-            , BURRO_QNDO_FOJE: "#8C887B"
-            , LIME: "#BAF702"
-        }
-        this.color_pallete = {
-            /*** SYSTEM***/
-            BACKGROUND : "#FFFFFF"
-            , FOREGROUND : "#ECF1F2"
-            , FONT : "#2C3D4F"
-            , FONTINVERTED: "#F2F2F2"
-            , FONTBLURED:"#7E8C8D"
-            , SPAN :"#2980B9"
-            , DISABLED: "#BDC3C8"
-            , DARK1:"rgba(0,0,0,.08)"
-            , DARK2:"rgba(0,0,0,.16)"
-            , DARK3:"rgba(0,0,0,.32)"
-            , DARK4:"rgba(0,0,0,.64)"
-            , LIGHT1:"rgba(255,255,255,.08)"
-            , LIGHT2:"rgba(255,255,255,.16)"
-            , LIGHT3:"rgba(255,255,255,.32)"
-            , LIGHT4:"rgba(255,255,255,.64)"
-            /*** PALLETE ***/
-            , WHITE: "#FFFFFF"
-            , BLACK: "#000000"
-        }
-        binds(this.color_pallete, this.prism);
     }
 }
 ;;
