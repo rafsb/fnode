@@ -1,14 +1,38 @@
 <template>
-
-    <main class='fixed wrap invert --splash' style="background:#1C2126;z-index:10000">
-        <img src="loading.gif" class="centered" style="height:6em">
-        <div class="absolute zero bar --boot-progress" style="width:1%;mix-blend-mode:difference"></div>
-    </main>
+    <div class="-splash view zero wrap" style="z-index:10000;">
+        <div class="right row bar -boot-progress diff" style="background: {{light4}};border-left:.5em solid {{dark2}}"></div>
+    </div>
 
     <script>
-        bootloader.onReadyStateChange.add(p => $('.--boot-progress').at()?.anime({ width: `${p*100}%` }))
-        bootloader.onFinishLoading.add(_ => $('.--boot-progress').at()?.anime({ width: `100%` }).then(_ => $('.--splash').at()?.disappear(AL, true)))
-        bootloader.ready('splash')
+        get(`img/splash.svg`, res => {
+            res = res.morph()[0]
+            res.$(`path`).forEach(p => {
+                const len = p.getTotalLength() ;;
+                p.css({
+                    stroke: `{{peter_river}}`
+                    , "stroke-dasharray": len
+                    , "stroke-dashoffset": len
+                    , fill: `transparent`
+                })
+            })
+            $(`.-splash`)[0].app(DIV(`centered -logo`).app(res))
+            setTimeout(_ => {
+                res.$(`path`).forEach((p, i) => {
+                    p.anime({
+                        stroke: i < 4 ? `{{peter_river}}` : `{{wet_asphalt}}`
+                        , "stroke-dashoffset": 0
+                    }, AL, AL/8*i).then(p => p.anime({ fill: i < 4 ? `{{peter_river}}` : `{{wet_asphalt}}` }))
+                })
+            }, AL/2)
+        })
+        bootloader.onReadyStateChange.add(p => $('.-boot-progress').at()?.anime({ width: `${100-p*100}%` }))
+        bootloader.onFinishLoading.add(_ => {
+            const logo = $(`.-splash .-logo`)[0].mime() ;;
+            $(`#home`)[0].pre(logo)
+            $('.-boot-progress').at()?.anime({ width: 0 }).then(_ => $('.-splash').at()?.remove())
+            setTimeout(_ => logo.$(`path`).forEach((p, i) => p.anime({ opacity: .04 }, AL, AL/4*i)), AL/4)
+        })
+        setTimeout(_ => bootloader.ready('splash'), AL*8)
     </script>
 
 </template>
