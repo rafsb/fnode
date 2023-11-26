@@ -1,14 +1,12 @@
 /*---------------------------------------------------------------------------------------------
  * CONFIG
  *--------------------------------------------------------------------------------------------*/
-
 /*
  *
  * GLOBALS
  *
  */
 window.VERBOSE            = true
-
 /*
  * ENUMS
  */
@@ -36,11 +34,11 @@ initpool.add(async _ => {
      *
      */
     bootloader.dependencies.add('home')
-    fw.load(`home.htm`).then(_ => bootloader.ready("home"))
+    fw.load(`home.htm`)
 
     /** Translate */
     bootloader.dependencies.add('translate')
-    GET('pt-br/translate.json').then(res => {
+    get(fw.locale + '/translate.json', res => {
         fw.components.translatedict = res
         bootloader.ready('translate')
     })
@@ -78,28 +76,13 @@ document.onkeyup = e => {
     }
 }
 
-function lightbox(html, ref="") {
-    const uuid = fw.uuid() ;;
-    if(typeof html == 'string') html = html.prepare({ uuid }).morph()
-    const w = TAG('main', 'fixed zero view -lightbox', { height:'calc(100vh - 3em)', top:'3em', background: fw.pallete.BACKGROUND, opacity:0 }) ;;
-    w.html(html)
-    w.app(
-        DIV('absolute zero-topright pointer', { height:'3em', width:'3em', margin:'0 .25em' }).app(
-            IMG('icons/cross.svg', 'avoid-cursor centered', { height:'1.25em' })
-        ).on('click', e => w.disappear(AL, true))
-    )
-    w.id = uuid
-    $('#app').app(w)
-    w.appear()
-}
-
 function increment(target, value, d=true, fill=false) {
     let
-    v = Math.max(parseInt(target.text()), 1)
+    v = Math.max(target.text()*1, 1)
     , pace = Math.max(1, (value - v) / 10)
     ;;
     v += pace
     if((d && v >= value) || (!d && v <= value)) return target.text(fill ? (""+value).fill('0',2) : value)
-    target.text(parseInt(v))
+    target.text(v.toFixed(2))
     setTimeout(increment, 20, target, value, d, fill)
 }
