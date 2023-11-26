@@ -44,8 +44,8 @@ class Log extends fobject {
 
     static once(worker_='Log', task_='once', type_='info', data_='', clr=ETerminalColors.FT_CYAN, vlevel=4, user_=null) {
         if(VERBOSE_PERSISTANCE_IO) io.write(`var/logs/${worker_}.log`, `${fdate.as()} ${task_} -> ${type_}\n${data_}\n\n`, EIO.APPEND)
-        // const l = new Log({ worker_, task_, type_, data_ }, user_) ;;
-        // if(vlevel<=VERBOSE_PERSISTANCE_THRESHOLD) l.log()
+        const l = new Log({ worker_, task_, type_, data_ }, user_) ;;
+        if(vlevel<=VERBOSE_PERSISTANCE_THRESHOLD) l.save()
         if(VERBOSE>=vlevel) {
             const
             max = process.stdout.columns || 1024
@@ -61,7 +61,7 @@ class Log extends fobject {
                 + '\n'
             )
         }
-        // return l
+        return l
     }
 
     static warn(worker_, task_, data_, clr=ETerminalColors.FT_YELLOW, user_=null) {
